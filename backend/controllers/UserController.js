@@ -75,8 +75,7 @@ const login = async (req, res) => {
         .status(400)
         .json({ status: false, message: `User does not Exists` });
     }
-    console.log(user);
-    console.log(password);
+
     const isPasswordMatched = user.password === password;
     if (!isPasswordMatched) {
       return res

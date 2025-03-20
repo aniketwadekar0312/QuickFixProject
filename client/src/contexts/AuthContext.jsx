@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axiosInstance from "../api/api";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(undefined);
 
@@ -16,7 +17,6 @@ export const AuthProvider = ({ children }) => {
       try {
         const user = JSON.parse(storedUser);
         setCurrentUser(user);
-        
       } catch (error) {
         console.error("Failed to parse stored user:", error);
         localStorage.removeItem("currentUser");
@@ -28,27 +28,31 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password, role) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await axiosInstance.post("/v1/login", { email, password, role });
+      const response = await axiosInstance.post("/v1/login", {
+        email,
+        password,
+        role,
+      });
 
       if (response.data && response.data.token) {
         const { user, token } = response.data;
 
-        // Save user & token in localStorage        
+        // Save user & token in localStorage
         localStorage.setItem("currentUser", JSON.stringify(user));
         localStorage.setItem("token", token);
-        
-        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        
+
+        axiosInstance.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${token}`;
+
         setCurrentUser(user);
 
         toast({
           title: "Logged in successfully",
           description: `Welcome back, ${user.name}!`,
         });
-      } else {
-        throw new Error("Invalid response from server");
       }
     } catch (error) {
       setError(error.response?.data?.message || "Login failed");
@@ -67,24 +71,12 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await axiosInstance.post("/v1/register", userData);
-      console.log(response.data);
-      
+      const { newuser } = response.data;
       if (response.data) {
-        const { newuser } = response.data;
-        console.log(newuser);
-        
-        // Save user & token in localStorage
-        localStorage.setItem("currentUser", JSON.stringify(newuser));
-
-        setCurrentUser(newuser);
-        // console.log(user.name); 
         toast({
           title: "Registration successful",
           description: `Welcome, ${newuser.name}!`,
         });
-
-      } else {
-        throw new Error("Invalid response from server");
       }
     } catch (error) {
       setError(error.response?.data?.message);
@@ -102,7 +94,7 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
     localStorage.removeItem("currentUser");
     localStorage.removeItem("token");
-    
+
     delete axiosInstance.defaults.headers.common["Authorization"];
 
     toast({

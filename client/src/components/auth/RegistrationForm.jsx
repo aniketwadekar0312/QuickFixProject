@@ -30,6 +30,8 @@ const RegistrationForm = () => {
   const defaultRole = searchParams.get("role") || "customer";
   const [loading, setLoading] = useState(false);
 
+  
+
   const form = useForm({
     defaultValues: {
       name: "test12",
@@ -37,7 +39,7 @@ const RegistrationForm = () => {
       phone: "9326321022",
       password: "12345678",
       confirmPassword: "12345678",
-      role: defaultRole,
+      role: "customer",
     },
   });
 

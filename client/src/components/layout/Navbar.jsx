@@ -71,73 +71,66 @@ const Navbar = () => {
 
             {isAuthenticated ? (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-10 w-10 rounded-full"
-                  >
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 p-0 rounded-full">
+                  {currentUser?.photoUrl ? (
+                    <img
+                      src={currentUser.photoUrl}
+                      alt={currentUser.name}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-6 w-6" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+            
+              <DropdownMenuContent align="end" className="w-56 bg-white shadow-lg rounded-lg">
+                {/* Profile Section */}
+                <div className="flex items-center gap-2 p-3">
+                  <div className="h-12 w-12">
                     {currentUser?.photoUrl ? (
                       <img
                         src={currentUser.photoUrl}
-                        alt={currentUser.name}
-                        className="h-10 w-10 rounded-full object-cover"
+                        alt="Profile"
+                        className="h-12 w-12 rounded-full object-cover"
                       />
                     ) : (
-                      <User className="h-6 w-6" />
+                      <User className="h-12 w-12 p-2 bg-gray-200 rounded-full" />
                     )}
-                  </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 bg-white shadow-lg rounded-lg"
-                >
-                  {/* Profile Section */}
-                  <div className="flex items-center gap-2 p-3">
-                    <div className="h-12 w-12">
-                      {currentUser?.photoUrl ? (
-                        <img
-                          src={currentUser.photoUrl}
-                          alt="Profile"
-                          className="h-12 w-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-12 w-12 p-2 bg-gray-200 rounded-full" />
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <p className="font-medium">{currentUser?.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {currentUser?.email}
-                      </p>
-                    </div>
                   </div>
-
-                  <DropdownMenuSeparator />
-
-                  {/* Dashboard Button */}
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={getDashboardLink()}
-                      className="flex items-center gap-2 py-2 px-3 cursor-pointer"
-                    >
-                      <Settings className="h-5 w-5 text-gray-700" />
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
-
-                  {/* Logout Button */}
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 py-2 px-3 text-red-600 cursor-pointer"
+                  <div className="flex flex-col">
+                    <p className="font-medium">{currentUser?.name}</p>
+                    <p className="text-sm text-gray-500">{currentUser?.email}</p>
+                  </div>
+                </div>
+            
+                <DropdownMenuSeparator />
+            
+                {/* Dashboard Button */}
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={getDashboardLink()}
+                    className="flex items-center gap-2 py-2 px-3 cursor-pointer"
                   >
-                    <LogOut className="h-5 w-5" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <Settings className="h-5 w-5 text-gray-700" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+            
+                <DropdownMenuSeparator />
+            
+                {/* Logout Button */}
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 py-2 px-3 text-red-600 cursor-pointer"
+                >
+                  <LogOut className="h-5 w-5" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             ) : (
               <div className="flex space-x-2">
                 <Button

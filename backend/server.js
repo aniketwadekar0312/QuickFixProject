@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const connectDB=require("./db")
 const userRouter=require("./routes/userRoute.js");
 const categoryRouter = require("./routes/ServiceCategoryRoute.js");
+const servicesRouter = require("./routes/ServicesRoute.js");
 // Load environment variables
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 // API Routes
 app.use('/api/v1', userRouter);
 app.use('/api/v1', categoryRouter);
+app.use('/api/v1', servicesRouter);
 
 // Serve static assets if in production
 if (process.env.NODE_ENV === 'production') {

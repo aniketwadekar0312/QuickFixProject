@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getCategory } from "../api/adminServices";
+import { getService } from "../api/servicesApi";
 import { mockServices } from "@/data/mockData";
 import { Search } from "lucide-react";
 
@@ -20,6 +21,7 @@ const Services = () => {
   const initialCategory = searchParams.get("category") || "all-categories";
 
   const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 
@@ -35,17 +37,29 @@ const Services = () => {
     }
   };
 
+  const fetchServices = async () => {
+    try {
+      const res = await getService();
+      setServices(res.services);
+    } catch (error) {
+      console.log("error fetching Services", error);
+    }
+  };
+
+
+
   useEffect(() => {
     fetchCategory();
+    fetchServices();
   }, []);
 
-  const filteredServices = mockServices.filter((service) => {
+  const filteredServices = services?.filter((service) => {
     const matchesSearch =
-      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchTerm.toLowerCase());
+      service?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service?.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       selectedCategory === "all-categories" ||
-      service.category === selectedCategory;
+      service?.category === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -102,12 +116,12 @@ const Services = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredServices.map((service) => (
               <Card
-                key={service.id}
+                key={service._id}
                 className="overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="h-48">
                   <img
-                    src={service.imageUrl}
+                    src={service.image}
                     alt={service.name}
                     className="w-full h-full object-cover"
                   />
@@ -122,9 +136,7 @@ const Services = () => {
                   <p className="text-gray-600">{service.description}</p>
                 </CardContent>
                 <CardFooter className="p-6 pt-0">
-                  <Button asChild className="w-full">
-                    <Link to={`/book-service/${service.id}`}>Book Now</Link>
-                  </Button>
+                  <Button className="w-full">Book Now</Button>
                 </CardFooter>
               </Card>
             ))}
