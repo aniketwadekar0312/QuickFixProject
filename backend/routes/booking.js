@@ -4,90 +4,17 @@ const Booking = require('../models/Booking');
 const Service = require('../models/Service');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { createBooking, getBookingsByCustomer } = require('../controllers/BookingController');
 
 // @route   POST api/bookings
 // @desc    Create a booking
 // @access  Private
-router.post('/', auth, async (req, res) => {
-  try {
-    const { workerId, serviceId, date, timeSlot, address, paymentMethod } = req.body;
-    
-    // Check if service exists
-    const service = await Service.findById(serviceId);
-    if (!service) {
-      return res.status(404).json({ msg: 'Service not found' });
-    }
-    
-    // Check if worker exists
-    const worker = await User.findById(workerId);
-    if (!worker || worker.role !== 'worker') {
-      return res.status(404).json({ msg: 'Worker not found' });
-    }
-    
-    // Calculate total amount
-    const platformFee = 49; // Example platform fee
-    const totalAmount = service.price + platformFee;
-    
-    const newBooking = new Booking({
-      customer: req.user.id,
-      worker: workerId,
-      service: serviceId,
-      date,
-      timeSlot,
-      address,
-      paymentMethod,
-      totalAmount
-    });
-    
-    const booking = await newBooking.save();
-    
-    // Populate booking with related data
-    const populatedBooking = await Booking.findById(booking._id)
-      .populate('customer', 'name email')
-      .populate('worker', 'name email')
-      .populate('service', 'name price');
-      
-    res.json(populatedBooking);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
+router.post('/', auth, createBooking);
 
 // @route   GET api/bookings
 // @desc    Get all bookings for current user
 // @access  Private
-router.get('/', auth, async (req, res) => {
-  try {
-    let bookings;
-    
-    if (req.user.role === 'customer') {
-      // If customer, get their bookings
-      bookings = await Booking.find({ customer: req.user.id })
-        .populate('worker', 'name')
-        .populate('service', 'name price')
-        .sort({ date: -1 });
-    } else if (req.user.role === 'worker') {
-      // If worker, get bookings assigned to them
-      bookings = await Booking.find({ worker: req.user.id })
-        .populate('customer', 'name')
-        .populate('service', 'name price')
-        .sort({ date: -1 });
-    } else if (req.user.role === 'admin') {
-      // If admin, get all bookings
-      bookings = await Booking.find()
-        .populate('customer', 'name')
-        .populate('worker', 'name')
-        .populate('service', 'name price')
-        .sort({ date: -1 });
-    }
-    
-    res.json(bookings);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
+router.get('/', auth, getBookingsByCustomer);
 
 // @route   GET api/bookings/:id
 // @desc    Get booking by ID

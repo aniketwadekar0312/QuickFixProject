@@ -1,12 +1,40 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { mockServices, serviceCategories } from "@/data/mockData";
+import { useState, useEffect } from "react";
+import { getService } from "../../api/servicesApi";
+import { serviceCategories as allCategories } from "@/data/mockData"; // Import all predefined categories
 
 const ServiceCategories = () => {
-  // Precompute service count per category to optimize performance
+  const [serviceCategories, setServiceCategories] = useState(allCategories); // Start with all categories
+  const [services, setServices] = useState([]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await getService();
+        // console.log(res);
+
+        setServices(res.services);
+
+        // Extract unique categories from the service list
+        const fetchedCategories = [...new Set(res.services.map(service => service.category))];
+
+        // Merge with predefined categories to ensure all are included
+        const mergedCategories = [...new Set([...allCategories, ...fetchedCategories])];
+
+        setServiceCategories(mergedCategories);
+      } catch (error) {
+        console.log("Error fetching services:", error);
+      }
+    };
+
+    fetchServices();
+  }, []); // Runs once on mount
+
+  // Precompute service count per category (include 0 counts)
   const categoryCounts = serviceCategories.map(category => ({
     name: category,
-    count: mockServices.filter(service => service.category === category).length,
+    count: services.filter(service => service.category === category).length || 0, // Default to 0
   }));
 
   return (

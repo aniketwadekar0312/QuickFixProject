@@ -25,6 +25,7 @@ import CustomerPaymentMethods from "./pages/CustomerPaymentMethods";
 import WorkerManageServices from "./pages/worker/WorkerManageServices";
 import WorkerAccountSettings from "./pages/worker/WorkerAccountSettings";
 import WorkerEarnings from "./pages/worker/WorkerEarnings";
+import WorkerRegister from "./pages/WorkerRegister";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/worker-register" element={<WorkerRegister />} />
             <Route path="/login" element={<Login />} />
             <Route path="/services" element={<Services />} />
             <Route path="/workers" element={<Workers />} />

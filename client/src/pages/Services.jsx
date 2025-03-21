@@ -40,13 +40,13 @@ const Services = () => {
   const fetchServices = async () => {
     try {
       const res = await getService();
+      console.log(res.services);
+      
       setServices(res.services);
     } catch (error) {
       console.log("error fetching Services", error);
     }
   };
-
-
 
   useEffect(() => {
     fetchCategory();
@@ -136,7 +136,9 @@ const Services = () => {
                   <p className="text-gray-600">{service.description}</p>
                 </CardContent>
                 <CardFooter className="p-6 pt-0">
-                  <Button className="w-full">Book Now</Button>
+                  <Button className="w-full">
+                    <Link to={`/book-service/${service._id}`}>Book Now</Link>
+                  </Button>
                 </CardFooter>
               </Card>
             ))}

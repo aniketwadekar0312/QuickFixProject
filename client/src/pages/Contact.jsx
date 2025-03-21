@@ -26,6 +26,8 @@ const Contact = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    console.log("Form Data:", formData);
+
     // Simulate API call
     setTimeout(() => {
       toast({

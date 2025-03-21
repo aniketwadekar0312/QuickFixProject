@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { mockWorkers, mockServices } from "@/data/mockData";
 import { Search, Star, MapPin, Clock } from "lucide-react";
+import { getUsers } from "../api/authServices";
 
 const Workers = () => {
   const [searchParams] = useSearchParams();
@@ -21,6 +22,28 @@ const Workers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedService, setSelectedService] = useState(initialService);
   const [selectedLocation, setSelectedLocation] = useState("all-locations");
+  const [mockWorkers, setMockWorkers] = useState([]);
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await getUsers(); // Use API function
+        const allUsers = res; // API now correctly returns an array
+
+        // Filter only workers
+        const workerUsers = allUsers.filter((user) => user.role === "worker");
+
+        setMockWorkers(workerUsers);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Extract unique locations from workers
   const locations = Array.from(
@@ -46,10 +69,8 @@ const Workers = () => {
       worker.location === selectedLocation;
 
     return (
-      matchesSearch &&
-      matchesService &&
-      matchesLocation &&
-      worker.status === "approved"
+      matchesSearch && matchesService && matchesLocation
+      // worker.status === "approved"
     );
   });
 
@@ -118,7 +139,7 @@ const Workers = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredWorkers.map((worker) => (
               <Card
-                key={worker.id}
+                key={worker._id}
                 className="overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="relative h-56">
@@ -145,7 +166,9 @@ const Workers = () => {
                   <h3 className="text-xl font-semibold mb-2">{worker.name}</h3>
                   <div className="flex items-center text-gray-500 mb-2">
                     <MapPin className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{worker.location}</span>
+                    <span className="text-sm capitalize">
+                      {worker.location}
+                    </span>
                   </div>
                   <div className="mb-4">
                     {worker.services.map((service, index) => (
@@ -170,11 +193,17 @@ const Workers = () => {
                       </span>
                     </div>
                     <div className="text-brand-700 font-semibold">
-                      ₹{Math.min(...Object.values(worker.pricing))}+
+                      {worker.pricing &&
+                      Object.keys(worker.pricing).length > 0 ? (
+                        <>₹{Math.min(...Object.values(worker.pricing))}+</>
+                      ) : (
+                        <>Not Available</>
+                      )}
+                      
                     </div>
                   </div>
                   <Button asChild className="w-full">
-                    <Link to={`/workers/${worker.id}`}>View Profile</Link>
+                    <Link to={`/workers/${worker._id}`}>View Profile</Link>
                   </Button>
                 </CardFooter>
               </Card>

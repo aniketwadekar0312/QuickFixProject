@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { CalendarIcon, Phone, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+
 const BookingForm = ({
   selectedService,
   setSelectedService,
@@ -42,19 +43,31 @@ const BookingForm = ({
   setContactNumber,
   handleSubmit,
   isSubmitting,
-  serviceDetails,
+  services,
+  workers,
 }) => {
   // Get filtered workers based on selected service
+  
   const filteredWorkers = selectedService
-    ? mockWorkers.filter(
+    ? workers.filter(
         (worker) =>
           worker.services.includes(
-            mockServices.find((s) => s.id === selectedService)?.name || ""
+            services.find((s) => s._id === selectedService)?.name || ""
           ) &&
-          worker.status === "approved" &&
+          // worker.status === "approved" &&
           worker.available
       )
     : [];
+
+    useEffect(() => {
+      if (selectedService) {
+        if (filteredWorkers.length > 0 && !selectedWorker) {
+          setSelectedWorker(filteredWorkers[0]._id); // Auto-select first worker only if none is selected
+        } else if (filteredWorkers.length === 0) {
+          setSelectedWorker(""); // Reset selection if no workers available
+        }
+      }
+    }, [selectedService, filteredWorkers]);
 
   // Time slots
   const timeSlots = [
@@ -80,8 +93,8 @@ const BookingForm = ({
                 <SelectValue placeholder="Choose a service" />
               </SelectTrigger>
               <SelectContent>
-                {mockServices.map((service) => (
-                  <SelectItem key={service.id} value={service.id}>
+                {services.map((service) => (
+                  <SelectItem key={service._id} value={service._id}>
                     {service.name}
                   </SelectItem>
                 ))}
@@ -101,10 +114,9 @@ const BookingForm = ({
                   <SelectValue placeholder="Choose a service provider (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any Available Provider</SelectItem>
                   {filteredWorkers.map((worker) => (
-                    <SelectItem key={worker.id} value={worker.id}>
-                      {worker.name} ({worker.rating.toFixed(1)}★)
+                    <SelectItem key={worker._id} value={worker._id}>
+                      {worker.name} ({worker.rating.toFixed(1)} ★)
                     </SelectItem>
                   ))}
                 </SelectContent>

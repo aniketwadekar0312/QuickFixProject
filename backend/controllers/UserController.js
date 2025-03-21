@@ -24,6 +24,8 @@ const register = async (req, res) => {
         location,
         pricing,
         description,
+        available,
+        photoUrl
       } = req.body;
       data = {
         name,
@@ -31,6 +33,8 @@ const register = async (req, res) => {
         phone,
         password,
         role,
+        photoUrl,
+        available,
         services,
         specializations,
         documents,
@@ -44,21 +48,13 @@ const register = async (req, res) => {
     const newuser = new User(data);
     // Save user to database
     await newuser.save();
-    // const payload = {
-    //   user: {
-    //     id: newuser._id,
-    //     role: newuser.role,
-    //   },
-    // };
-
-    // const token=jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "10d" });
+    
     return res
       .status(200)
       .json({
         status: true,
         message: `${role} registered successfully.`,
         newuser,
-        // token
       });
   } catch (error) {
     console.log("Getting error in register", error);
@@ -99,4 +95,16 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const getUsers = async (req, res) => {
+  try {
+    // Fetch only workers
+    const users = await User.find();
+
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+module.exports = { register, login, getUsers };

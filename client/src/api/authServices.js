@@ -5,8 +5,13 @@ export const loginUser = async (credentials) => {
   return await axiosInstance.post("/v1/login", credentials);
 };
 
+
 export const registerUser = async (userData) => {
   return await axiosInstance.post("/v1/register", userData);
+};
+
+export const getUsers = async () => {
+  return (await axiosInstance.get("/v1/users")).data; // ✅ Return only .data
 };
 
 // Fetch User Profile

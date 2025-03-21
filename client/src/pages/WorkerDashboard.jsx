@@ -112,7 +112,7 @@ const WorkerDashboard = () => {
                       />
                     </div>
                     <Button asChild variant="outline" size="sm" className="w-full">
-                      <Link to="/worker/profile">Edit Profile</Link>
+                      <Link to="/profile">Edit Profile</Link>
                     </Button>
                   </div>
                 </div>

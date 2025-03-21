@@ -19,7 +19,7 @@ const HeroBanner = () => {
               <Link to="/services">Book a Service</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-brand-700">
-              <Link to="/register?role=worker">Join as Service Provider</Link>
+              <Link to="/worker-register">Join as Service Provider</Link>
             </Button>
           </div>
           <div className="bg-white rounded-lg p-4 flex flex-col sm:flex-row gap-2 shadow-lg">

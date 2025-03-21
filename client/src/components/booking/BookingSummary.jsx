@@ -13,7 +13,7 @@ const BookingSummary = ({
   workerName,
 }) => {
   const serviceDetails = selectedService 
-    ? mockServices.find(s => s.id === selectedService) 
+    ? mockServices.find(s => s._id === selectedService) 
     : null;
 
   return (

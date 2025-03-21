@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { mockServices, mockWorkers } from "@/data/mockData";
 import BookingForm from "@/components/booking/BookingForm";
 import BookingSummary from "@/components/booking/BookingSummary";
+import { getService } from "../api/servicesApi";
+import { getUsers } from "../api/authServices";
 
 const BookService = () => {
   const { id } = useParams();
@@ -24,9 +26,45 @@ const BookService = () => {
   const [paymentMethod, setPaymentMethod] = useState("online");
   const [contactNumber, setContactNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [services, setServices] = useState([]);
+  const [workers, setWorkers] = useState([]);
+
+    const fetchServices = async () => {
+      try {
+        const res = await getService();
+        // console.log(res.services); 
+        setServices(res.services);
+      } catch (error) {
+        console.log("error fetching Services", error);
+      }
+    };
+
+    const fetchUsers = async () => {
+      try {
+        const res = await getUsers(); // Use API function
+        const allUsers = res; // API now correctly returns an array
+
+        // Filter only workers
+        const workerUsers = allUsers.filter((user) => user.role === "worker");
+
+        setWorkers(workerUsers);
+        // setLoading(false);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        // setLoading(false);
+      }
+    };
   
-  const serviceDetails = id ? mockServices.find(service => service.id === id) : null;
-  const workerName = selectedWorker ? mockWorkers.find(w => w.id === selectedWorker)?.name : undefined;
+    useEffect(() => {
+      fetchServices();
+      fetchUsers();
+    }, []);
+  
+  const serviceDetails = id ? services.find(service => service.id === id) : null;
+  const workerName = selectedWorker ? workers.find(w => w.id === selectedWorker)?.name : undefined;
+  // const serviceName=
+  // console.log(serviceDetails);
+  
   
   useEffect(() => {
     if (serviceDetails) {
@@ -105,6 +143,9 @@ const BookService = () => {
                   handleSubmit={handleSubmit}
                   isSubmitting={isSubmitting}
                   serviceDetails={serviceDetails}
+                  services={services}
+                  workers={workers}
+                  workerName={workerName}
                 />
               </div>
               

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, UserCheck, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import WorkerRegistrationForm from "../components/auth/WorkerRegistartion";
 import {
   Form,
   FormControl,
@@ -183,6 +184,7 @@ return (
       <div className="container mx-auto px-4 max-w-3xl">
         <h1 className="text-3xl font-bold mb-8">My Profile</h1>
 
+        <div>
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Profile Information</CardTitle>
@@ -357,6 +359,8 @@ return (
             </Form>
           </CardContent>
         </Card>
+
+        </div>
 
         <div className="mt-6 flex justify-between">
           <Button onClick={handleBackToDashboard} variant="outline">
