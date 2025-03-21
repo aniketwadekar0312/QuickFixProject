@@ -112,7 +112,7 @@ const BookService = () => {
           <Button 
             variant="ghost" 
             className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/services")}
           >
             <ArrowLeft size={16} />
             Back
@@ -158,6 +158,7 @@ const BookService = () => {
                   address={address}
                   paymentMethod={paymentMethod}
                   workerName={workerName}
+                  services={services}
                 />
               </div>
             </div>

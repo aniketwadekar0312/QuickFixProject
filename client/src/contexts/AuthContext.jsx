@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
         role,
       });
 
-      if (response.data && response.data.token) {
+      if (response.data.status && response.data && response.data.token) {
         const { user, token } = response.data;
 
         // Save user & token in localStorage
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axiosInstance.post("/v1/register", userData);
       const { newuser } = response.data;
-      if (response.data) {
+      if (response.data.status && response.data) {
         toast({
           title: "Registration successful",
           description: `Welcome, ${newuser.name}!`,

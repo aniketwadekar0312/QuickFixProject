@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,16 +22,28 @@ import { mockWorkers } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { Star, MapPin, Phone, Mail, Clock, Check } from "lucide-react";
 import { getUsers } from "../api/authServices";
+import { getService } from "../api/servicesApi";
 
 const WorkerProfile = () => {
   const { id } = useParams();
-
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedService, setSelectedService] = useState("");
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-  const [mockWorkers, setMockWorkers] = useState([]);
+  const [services, setServices] = useState([]);
+  const [workers, setWorkers] = useState([]);
+
+  const fetchServices = async () => {
+    try {
+      const res = await getService();
+      // console.log(res.services);
+      setServices(res.services);
+    } catch (error) {
+      console.log("error fetching Services", error);
+    }
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -40,15 +52,15 @@ const WorkerProfile = () => {
         const allUsers = res; // API now correctly returns an array
         // Filter only workers
         const workerUsers = allUsers.filter((user) => user.role === "worker");
-        setMockWorkers(workerUsers);
+        setWorkers(workerUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
-
+    fetchServices();
     fetchUsers();
   }, []);
-  const worker = mockWorkers.find((w) => w._id === id);
+  const worker = workers.find((w) => w._id === id);
   console.log(worker);
 
   if (!worker) {
@@ -69,7 +81,6 @@ const WorkerProfile = () => {
       </Layout>
     );
   }
-
   const timeSlots = [
     "09:00 AM",
     "10:00 AM",
@@ -82,34 +93,41 @@ const WorkerProfile = () => {
     "05:00 PM",
   ];
 
-  const handleBooking = (e) => {
-    e.preventDefault();
-
-    if (!selectedService) {
-      toast({
-        title: "Service required",
-        description: "Please select a service to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!selectedTime) {
-      toast({
-        title: "Time slot required",
-        description: "Please select a time slot to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Booking request sent!",
-      description: `Your booking request with ${worker.name} has been sent for approval.`,
-    });
-
-    setBookingDialogOpen(false);
+  const handleBooking = (servicename) => {
+    const serviceId = services.find(
+      (service) => service.name == servicename
+    )?._id;
+    navigate(`/book-service/${serviceId}`);
   };
+
+  // const handleBooking = (e) => {
+  //   e.preventDefault();
+
+  //   if (!selectedService) {
+  //     toast({
+  //       title: "Service required",
+  //       description: "Please select a service to continue.",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
+
+  //   if (!selectedTime) {
+  //     toast({
+  //       title: "Time slot required",
+  //       description: "Please select a time slot to continue.",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
+
+  //   toast({
+  //     title: "Booking request sent!",
+  //     description: `Your booking request with ${worker.name} has been sent for approval.`,
+  //   });
+
+  //   setBookingDialogOpen(false);
+  // };
 
   return (
     <Layout>
@@ -192,9 +210,6 @@ const WorkerProfile = () => {
                       </div>
                     </div>
                     <div>
-                      <Button size="lg" disabled={!worker.available}>
-                        <Link to={"/book-service/:id?"}>Book Now</Link>
-                      </Button>
                       {/* <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
                         <DialogTrigger asChild>
                           
@@ -332,6 +347,16 @@ const WorkerProfile = () => {
                           {worker.services.includes(service) &&
                             "Professional service with expert care and quality materials."}
                         </p>
+                        {/* Button placed in a separate div and aligned properly */}
+                        <div className="mt-2 flex justify-end">
+                          <Button
+                            size="sm"
+                            disabled={!worker.available}
+                            onClick={() => handleBooking(service)}
+                          >
+                            Book Now
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>

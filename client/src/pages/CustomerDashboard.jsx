@@ -53,7 +53,7 @@ const CustomerDashboard = () => {
                 <div className="flex flex-col items-center text-center">
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                     <img
-                      src={currentUser?.photoUrl || "https://i.pravatar.cc/150?img=1"}
+                      src={currentUser?.photoUrl || "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-855.jpg?t=st=1742568984~exp=1742572584~hmac=eda45c968a953e5a2780fb6cc1f3aec1501576925abbf55247243029d0aee3a0&w=740"}
                       alt={currentUser?.name}
                       className="w-full h-full object-cover"
                     />

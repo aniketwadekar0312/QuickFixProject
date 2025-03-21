@@ -11,11 +11,11 @@ const BookingSummary = ({
   address,
   paymentMethod,
   workerName,
+  services
 }) => {
   const serviceDetails = selectedService 
-    ? mockServices.find(s => s._id === selectedService) 
+    ? services.find(s => s._id === selectedService) 
     : null;
-
   return (
     <Card>
       <CardContent className="p-6">
