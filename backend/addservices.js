@@ -62,8 +62,7 @@ const mockServices = [
 
 const seedDB = async () => {
   try {
-    await mongoose.connect('mongodb+srv://aniketwadekar0312:quickfixapp@cluster0.k26t4.mongodb.net');
-    console.log('MongoDB Connected');
+   //
     
     await Service.deleteMany(); // Clears existing data
     console.log('Existing services removed');
