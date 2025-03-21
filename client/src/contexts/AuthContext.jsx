@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axiosInstance from "../api/api";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+
 
 const AuthContext = createContext(undefined);
 
@@ -9,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
@@ -52,6 +55,7 @@ export const AuthProvider = ({ children }) => {
           title: "Logged in successfully",
           description: `Welcome back, ${user.name}!`,
         });
+        navigate(`/${role}/dashboard`);
       }
     } catch (error) {
       setError(error.response?.data?.message || "Login failed");
@@ -76,6 +80,7 @@ export const AuthProvider = ({ children }) => {
           title: "Registration successful",
           description: `Welcome, ${newuser.name}!`,
         });
+        navigate(`/login`);
       }
     } catch (error) {
       setError(error.response?.data?.message);

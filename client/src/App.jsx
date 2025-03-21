@@ -35,7 +35,6 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/register" element={<Register />} />
@@ -61,7 +60,6 @@ const App = () => (
             {/* Catch-all route for undefined paths */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

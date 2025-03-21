@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import {
   Form,
   FormControl,
@@ -34,8 +35,8 @@ const RegistrationForm = () => {
 
   const form = useForm({
     defaultValues: {
-      name: "test12",
-      email: "test12@gmail.com",
+      name: "customer",
+      email: "customer@gmail.com",
       phone: "9326321022",
       password: "12345678",
       confirmPassword: "12345678",
@@ -63,27 +64,8 @@ const RegistrationForm = () => {
         role: values.role,
       };
       await register(userData);
-
-      // toast({
-      //   title: "Registration successful!",
-      //   description: "You can now log in to your account.",
-      // });
-
-      // Redirect to appropriate dashboard based on role
-      // const roleRoutes = {
-      //   customer: "/customer/dashboard",
-      //   worker: "/worker/dashboard",
-      //   admin: "/admin/dashboard",
-      // };
-      navigate("/login");
     } catch (error) {
       console.error("Registration error:", error);
-
-      // toast({
-      //   title: "Registration failed",
-      //   description: error.response?.data?.message || "An error occurred",
-      //   variant: "destructive",
-      // });
     } finally {
       setLoading(false);
     }
@@ -93,6 +75,14 @@ const RegistrationForm = () => {
   return (
     <div className="max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-6">Create an Account</h2>
+      <div className="bg-amber-50 p-4 mb-6 rounded-lg border border-amber-200">
+        <p className="text-sm text-amber-800">
+          Looking to register as a service provider? 
+          <Link to="/worker-register" className="font-semibold ml-1 text-blue-600 hover:underline">
+            Click here to sign up
+          </Link>
+        </p>
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -201,8 +191,8 @@ const RegistrationForm = () => {
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="customer">Customer</SelectItem>
-                    <SelectItem value="worker">Service Provider</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    {/* <SelectItem value="worker">Service Provider</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem> */}
                   </SelectContent>
                 </Select>
                 <FormDescription>
@@ -222,13 +212,11 @@ const RegistrationForm = () => {
       <div className="mt-4 text-center text-sm">
         <p>
           Already have an account?{" "}
-          <a
-            href="#"
-            onClick={() => navigate("/")}
+          <Link to="/login"
             className="text-brand-600 hover:underline"
           >
             Log in
-          </a>
+          </Link>
         </p>
       </div>
     </div>

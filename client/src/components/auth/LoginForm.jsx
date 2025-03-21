@@ -10,7 +10,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,7 +33,7 @@ const LoginForm = () => {
 
   const form = useForm({
     defaultValues: {
-      email: "test12@gmail.com",
+      email: "customer@gmail.com",
       password: "12345678",
       role: "customer",
     },
@@ -43,7 +43,6 @@ const LoginForm = () => {
     setLoading(true);
     try {
       await login(values.email, values.password, values.role);
-      navigate(`/${values.role}/dashboard`); // Redirect after login
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -131,6 +130,18 @@ const LoginForm = () => {
           </Button>
         </form>
       </Form>
+      <div className="mt-4 text-center text-sm">
+        <p>
+          Don't have an account?{" "}
+          <a
+            href="#"
+            onClick={() => navigate("/login")}
+            className="text-brand-600 hover:underline"
+          >
+            Register now
+          </a>
+        </p>
+      </div>
     </div>
   );
 };

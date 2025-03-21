@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, UserCheck, Loader2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import WorkerRegistrationForm from "../components/auth/WorkerRegistartion";
+
 import {
   Form,
   FormControl,
@@ -21,6 +21,7 @@ import {
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { updateUserProfile } from "../api/authServices";
 
 const profileSchema = z.object({
   name: z.string().min(2, {
@@ -38,24 +39,6 @@ const Profile = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Password form schema
-  const passwordSchema = z
-    .object({
-      currentPassword: z
-        .string()
-        .min(8, { message: "Password must be at least 8 characters." }),
-      newPassword: z
-        .string()
-        .min(8, { message: "Password must be at least 8 characters." }),
-      confirmPassword: z
-        .string()
-        .min(8, { message: "Password must be at least 8 characters." }),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: "Passwords don't match",
-      path: ["confirmPassword"],
-    });
-
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
@@ -65,11 +48,11 @@ const Profile = () => {
 
   // Setup profile form
   const profileForm = useForm({
-    resolver: zodResolver(profileSchema),
     defaultValues: {
       name: currentUser?.name || "",
       phone: currentUser?.phone || "",
     },
+    mode: "onBlur",
   });
 
   // Update form values if user data changes
@@ -84,12 +67,12 @@ const Profile = () => {
 
   // Setup password form
   const passwordForm = useForm({
-    resolver: zodResolver(passwordSchema),
     defaultValues: {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
+    mode: "onBlur",
   });
 
   // Redirect to the appropriate dashboard based on role
@@ -116,13 +99,14 @@ const Profile = () => {
     setIsUpdating(true);
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updatedUser = await updateUserProfile(currentUser._id, data); 
 
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
-      });
+      if (updatedUser.data.status) {
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been updated successfully.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Update failed",
@@ -139,21 +123,30 @@ const Profile = () => {
   const onPasswordSubmit = async (data) => {
     setIsChangingPassword(true);
 
-    try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+    if (data.newPassword !== data.confirmPassword) {
       toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully.",
+        title: "Password mismatch",
+        description: "New passwords do not match.",
+        variant: "destructive",
       });
+      setIsChangingPassword(false);
+      return;
+    }
 
-      // Reset password form
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+    try {
+      const updatedUser = await updateUserProfile(currentUser._id, data);
+      console.log(data);
+
+      if (updatedUser.data.status) {
+        console.log(updatedUser);
+        
+        toast({
+          title: "Password updated",
+          description: "Your password has been updated successfully.",
+        });
+      }
+
+      passwordForm.reset();
     } catch (error) {
       toast({
         title: "Update failed",
@@ -175,7 +168,7 @@ const Profile = () => {
   };
 
   if (!isAuthenticated || !currentUser) {
-    return null; // Will redirect via useEffect
+    return null;
   }
 
   return (
