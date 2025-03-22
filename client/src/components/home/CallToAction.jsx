@@ -14,7 +14,7 @@ const CallToAction = () => {
             <Link to="/services">Book a Service</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-brand-700">
-            <Link to="/register?role=worker">Become a Service Provider</Link>
+            <Link to="/worker-register">Become a Service Provider</Link>
           </Button>
         </div>
       </div>

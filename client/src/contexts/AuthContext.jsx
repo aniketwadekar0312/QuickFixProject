@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import axiosInstance from "../api/api";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-
+import { getUserById } from "../api/authServices";
 
 const AuthContext = createContext(undefined);
 
@@ -14,19 +14,34 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("currentUser");
+    const checkAuth = async () => {
+      const storedUser = localStorage.getItem("currentUser");
+      
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          setCurrentUser(user);
+          
+          // Optionally verify token validity with backend
+          try {
+            await getUserById(storedUser._id);
+          } catch (error) {
+            // If token is invalid, logout
+            console.error("Invalid token:", error);
+            logout();
+          }
+        } catch (error) {
+          console.error("Failed to parse stored user:", error);
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+        }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+    
+    checkAuth();
   }, []);
-
+  
   const login = async (email, password, role) => {
     setLoading(true);
     setError(null);
@@ -94,6 +109,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = async (id,data) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.put(`/v1/user/${id}`, data); // Use PUT instead of POST
+      const { user } = response.data;
+  
+      if (response.data.status && user) {
+        // Update the current user in context
+        setCurrentUser(user);
+        localStorage.setItem("currentUser", JSON.stringify(user)); // Persist user update
+
+        toast({
+          title: "Profile Updated",
+          description: `Your profile has been successfully updated.`,
+        });
+  
+      }
+    } catch (error) {
+      setError(error.response?.data?.message);
+      toast({
+        title: "Update Failed",
+        description: error.response?.data?.message || "An error occurred while updating your profile.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem("currentUser");
@@ -107,13 +153,20 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  // console.log(currentUser);
   const value = {
     currentUser,
+    setCurrentUser,
+    setError,
+    toast,
+    navigate,
+    getUserById,
     loading,
     error,
     login,
     register,
     logout,
+    updateUser,
     isAuthenticated: !!currentUser,
   };
 

@@ -33,7 +33,6 @@ const Workers = () => {
 
         // Filter only workers
         const workerUsers = allUsers.filter((user) => user.role === "worker");
-
         setMockWorkers(workerUsers);
         setLoading(false);
       } catch (error) {

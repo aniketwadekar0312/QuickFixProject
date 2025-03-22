@@ -1,18 +1,18 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const BookingSchema = new mongoose.Schema({
+const BookingSchema = new Schema({
   customer: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   worker: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: Schema.Types.ObjectId,
+    ref: 'User'
   },
   service: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Service',
     required: true
   },
@@ -24,19 +24,30 @@ const BookingSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  address: {
+    type: String,
+    required: true
+  },
+  additionalNotes: {
+    type: String
+  },
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'completed', 'cancelled'],
     default: 'pending'
   },
-  address: {
-    type: String,
-    required: true
-  },
   paymentMethod: {
     type: String,
-    enum: ['online', 'cash'],
+    enum: ['online', 'cod'],
     required: true
+  },
+  payment: {
+    paymentIntentId: String,
+    status: {
+      type: String,
+      enum: ['pending', 'completed', 'failed', 'refunded']
+    },
+    refundId: String
   },
   totalAmount: {
     type: Number,

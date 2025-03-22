@@ -117,6 +117,17 @@ const getUsers = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+    // Fetch only workers
+    const user = await User.findById(req.param.id);
+    return res.status(200).json({status: true, message: "User fetched successfully.",user});
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
 const updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -167,4 +178,4 @@ const updateUser = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getUsers, updateUser };
+module.exports = { register, login, getUsers, updateUser, getUserById };

@@ -19,7 +19,6 @@ import { mockServices } from "@/data/mockData";
 import { Plus, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
-
 import {
   Form,
   FormControl,
@@ -30,13 +29,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { getService } from "../../api/servicesApi";
-import { updateUserProfile, getUsers } from "../../api/authServices";
+import {
+  updateUserProfile,
+  getUsers,
+  getUserById,
+} from "../../api/authServices";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../contexts/AuthContext";
 
 const WorkerManageServices = () => {
   const { toast } = useToast();
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser, updateUser } = useAuth();
+  const [user, setUser] = useState(null);
 
   const [showAddService, setShowAddService] = useState(false);
 
@@ -46,6 +50,34 @@ const WorkerManageServices = () => {
   const [specialization, setSpecialization] = useState("");
   const [workSampleLink, setWorkSampleLink] = useState("");
   const [servicePrices, setServicePrices] = useState({});
+  // console.log("setCurrentUser:", setCurrentUser);
+
+  // const getUser = async () => {
+  //     try {
+  //       const response = await getUserById(currentUser?._id);
+  //       // const storedUser = localStorage.getItem("currentUser");;
+  //       console.log(currentUser._id);
+
+  //       if (response.data.status) {
+  //         try {
+  //           // const user = JSON.parse(storedUser);
+  //           setUser(response.data.user);
+  //         } catch (error) {
+  //           console.error("Failed to parse stored user:", error);
+  //           localStorage.removeItem("currentUser");
+  //         }
+  //       }
+  //     } catch (e) {
+  //       console.log(e);
+  //     }
+  //   };
+  //   useEffect(() => {
+  //     if (currentUser?._id) {
+  //       getUser();
+  //     }
+  //   }, [currentUser]);
+
+  // console.log(user);
 
   const fetchServices = async () => {
     try {
@@ -61,20 +93,26 @@ const WorkerManageServices = () => {
   useEffect(() => {
     fetchServices();
   }, []);
+  // console.log(currentUser);
+  // console.log(currentUser?.location);
 
   const form = useForm({
     defaultValues: {
-      // location: currentUser?.location || "",
+      location: currentUser?.location || "",
       description: currentUser?.description || "",
       services: currentUser?.services || [],
       pricing: currentUser?.pricing || {},
       specializations: currentUser?.specializations || [],
       available: currentUser?.available ?? true,
-      aadhaarLink: currentUser?.aadhaarLink || "",
-      workSamplesLinks: currentUser?.workSamplesLinks || [],
+      aadhaarLink: currentUser?.documents?.aadhaarCard || "", // Ensure Aadhaar link is set
+      photoUrl: currentUser?.photoUrl || "",
+      workSamplesLinks: currentUser?.documents?.workImages || [], // Ensure work samples are set
     },
     mode: "onBlur",
   });
+
+  // console.log(form.defaultValues?.aadhaarLink);
+  // console.log(form.defaultValues?.location);
 
   const handleAddSpecialization = () => {
     if (!specialization.trim()) return;
@@ -100,28 +138,37 @@ const WorkerManageServices = () => {
     });
   };
 
-  const handleAddWorkSample = () => {
-    if (!workSampleLink.trim()) return;
+  // const workSamples = form.watch("workSamplesLinks") || [];
 
-    const currentWorkSamples = form.getValues("workSamplesLinks") || [];
-    if (!currentWorkSamples.includes(workSampleLink)) {
+  const handleAddWorkSample  = () => {
+    if (!workSampleLink.trim()) return; // Ignore empty input
+  
+    const currentWorkImages = form.getValues("workSamplesLinks") || [];
+    if (!currentWorkImages.includes(workSampleLink)) {
       form.setValue(
         "workSamplesLinks",
-        [...currentWorkSamples, workSampleLink],
+        [...currentWorkImages, workSampleLink],
         { shouldDirty: true }
       );
-      setWorkSampleLink("");
+      setWorkSampleLink(""); // Clear input after adding
     }
   };
-
-  const handleRemoveWorkSample = (link) => {
-    const currentWorkSamples = form.getValues("workSamplesLinks") || [];
-    const updatedWorkSamples = currentWorkSamples.filter((s) => s !== link);
-    form.setValue("workSamplesLinks", updatedWorkSamples, {
-      shouldDirty: true,
-    });
+  
+  const handleRemoveWorkSample   = (link) => {
+    const currentWorkImages = form.getValues("workSamplesLinks") || [];
+    const updatedWorkImages = currentWorkImages.filter((s) => s !== link);
+  
+    form.setValue("workSamplesLinks", updatedWorkImages, { shouldDirty: true });
+  
+    // If removing the current input, reset to the latest available image
+    if (workSampleLink  === link) {
+      setWorkSampleLink(
+        updatedWorkImages.length > 0
+          ? updatedWorkImages[updatedWorkImages.length - 1]
+          : ""
+      );
+    }
   };
-
   // const handleServiceChange = (service, checked) => {
   //   const currentServices = form.getValues("services") || [];
   //   const currentPricing = form.getValues("pricing") || {};
@@ -199,19 +246,21 @@ const WorkerManageServices = () => {
 
   useEffect(() => {
     form.reset({
-      // location: currentUser.location || "",
+      location: currentUser?.location || "",
       description: currentUser?.description || "",
       services: currentUser?.services || [],
       pricing: currentUser?.pricing || {},
       specializations: currentUser?.specializations || [],
       available: currentUser?.available ?? true,
-      aadhaarLink: currentUser?.aadhaarLink || "",
-      workSamplesLinks: currentUser?.workSamplesLinks || [],
+      aadhaarLink: currentUser?.documents?.aadhaarLink || "",
+      photoUrl: currentUser?.photoUrl || "",
+      workSamplesLinks: currentUser?.documents?.workSamplesLinks || [],
     });
   }, [currentUser]);
 
   // useEffect(() => {
   //   form.reset((prevValues) => ({
+  //     location: currentUser?.location || prevValues.location,
   //     description: currentUser?.description ?? prevValues.description,
   //     services: currentUser?.services ?? prevValues.services,
   //     pricing: currentUser?.pricing ?? prevValues.pricing,
@@ -225,15 +274,39 @@ const WorkerManageServices = () => {
   // }, [currentUser]);
   async function onSubmit(values) {
     try {
-      // Get only changed values
       const updatedFields = {};
+
+      // Compare top-level fields
       Object.keys(values).forEach((key) => {
-        if (JSON.stringify(values[key]) !== JSON.stringify(currentUser[key])) {
-          updatedFields[key] = values[key];
+        if (
+          key !== "aadhaarLink" && // Aadhaar is inside documents
+          key !== "workSamplesLinks" // Work images are inside documents
+        ) {
+          if (
+            JSON.stringify(values[key]) !== JSON.stringify(currentUser[key])
+          ) {
+            updatedFields[key] = values[key];
+          }
         }
       });
 
-      // Check if there are changes
+      // ✅ Handle Aadhaar, Work Images, and Specializations
+      const updatedDocuments = {
+        aadhaarCard: values.aadhaarLink, // ✅ Update Aadhaar
+        workImages: values.workSamplesLinks, // ✅ Update work images
+      };
+      // console.log(aadhaarLink);
+
+      // Check if `documents` changed
+      if (
+        JSON.stringify(updatedDocuments) !==
+        JSON.stringify(currentUser.documents)
+      ) {
+        updatedFields.documents = updatedDocuments;
+      }
+
+      console.log("Updated Fields:", updatedFields);
+
       if (Object.keys(updatedFields).length === 0) {
         toast({
           title: "No changes detected",
@@ -244,31 +317,34 @@ const WorkerManageServices = () => {
       }
 
       setLoading(true);
-      const updatedUser = await updateUserProfile(
-        currentUser._id,
-        updatedFields
-      );
-      console.log("Updating with:", updatedFields);
+      await updateUser(currentUser._id, updatedFields);
 
-      if (updatedUser.data.status) {
-        toast({
-          title: "Profile updated",
-          description: "Your profile has been updated successfully.",
-        });
-      }
+      // console.log(updatedUser);
+
+      // if (updatedUser.data.status) {
+      //   toast({
+      //     title: "Profile updated",
+      //     description: "Your profile has been updated successfully.",
+      //   });
+      // }
+
+      // setCurrentUser(updatedUser.data.user);
+      // localStorage.setItem("currentUser", JSON.stringify(updatedUser.data.user));
+      // console.log(updatedUser);
 
       setShowAddService(false);
     } catch (error) {
-      toast({
-        title: "Update failed",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
+      // toast({
+      //   title: "Update failed",
+      //   description: "Failed to update profile. Please try again.",
+      //   variant: "destructive",
+      // });
       console.error("Failed to update profile:", error);
     } finally {
       setLoading(false);
     }
   }
+
   // Get a subset of mock services
   const [workerServices, setWorkerServices] = useState([
     {
@@ -702,6 +778,7 @@ const WorkerManageServices = () => {
                             </Button>
                           </div>
 
+                          {/* Display added work sample links */}
                           <div className="flex flex-col gap-2 mt-3">
                             {form
                               .watch("workSamplesLinks")
@@ -710,7 +787,10 @@ const WorkerManageServices = () => {
                                   key={index}
                                   className="bg-gray-100 rounded-md px-3 py-2 text-sm flex items-center justify-between"
                                 >
-                                  <span className="truncate flex-1">
+                                  <span
+                                    className="truncate flex-1 cursor-pointer"
+                                    onClick={() => setWorkSampleLink(link)} // Clicking allows editing
+                                  >
                                     {link}
                                   </span>
                                   <button
@@ -724,9 +804,12 @@ const WorkerManageServices = () => {
                               ))}
                           </div>
 
+                          {/* Show error messages if there are validation errors */}
                           {form.formState.errors.workSamplesLinks && (
                             <p className="text-sm font-medium text-destructive mt-2">
-                              {form.formState.errors.workSamplesLinks.message}
+                              <span className="break-all">
+                                {form.formState.errors.workSamplesLinks.message}
+                              </span>
                             </p>
                           )}
                         </div>

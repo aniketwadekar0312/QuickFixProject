@@ -37,14 +37,14 @@ const createBooking = async (req, res) => {
     const booking = await newBooking.save();
     
     // Populate booking with related data
-    const populatedBooking = await Booking.findById(booking._id)
+    const populatedBooking = await Booking.findById(booking.id)
       .populate('customer', 'name email')
       .populate('worker', 'name email')
       .populate('service', 'name price');
       
     res.json(populatedBooking);
   } catch (err) {
-    console.error(err.message);
+    console.error("create booking",err.message);
     res.status(500).send('Server error');
   }
 }

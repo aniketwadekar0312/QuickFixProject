@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { CalendarIcon, Clock, MapPin, CreditCard } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, CreditCard, Wallet } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { mockServices } from "@/data/mockData";
 
@@ -11,11 +11,19 @@ const BookingSummary = ({
   address,
   paymentMethod,
   workerName,
+  currentStep = 1,
+  selectedPaymentId = "",
+  paymentMethods = [],
   services
 }) => {
   const serviceDetails = selectedService 
     ? services.find(s => s._id === selectedService) 
     : null;
+      
+  // Get selected payment method details
+  const selectedPaymentMethod = selectedPaymentId
+    ? paymentMethods.find(method => method.id === selectedPaymentId)
+    : undefined;
   return (
     <Card>
       <CardContent className="p-6">
@@ -68,12 +76,22 @@ const BookingSummary = ({
             )}
             
             <div className="flex items-start">
-              <CreditCard className="h-5 w-5 text-gray-500 mr-2 mt-0.5" />
+            {paymentMethod === "online" ? (
+                <CreditCard className="h-5 w-5 text-gray-500 mr-2 mt-0.5" />
+              ) : (
+                <Wallet className="h-5 w-5 text-gray-500 mr-2 mt-0.5" />
+              )}
               <div>
                 <p className="text-sm text-gray-500">Payment Method</p>
                 <p className="font-medium">
                   {paymentMethod === "online" ? "Online Payment" : "Cash on Delivery"}
                 </p>
+
+                {currentStep === 2 && paymentMethod === "online" && selectedPaymentMethod && (
+                  <p className="text-sm text-gray-600">
+                    {selectedPaymentMethod.cardType} {selectedPaymentMethod.cardNumber}
+                  </p>
+                )}
               </div>
             </div>
             
