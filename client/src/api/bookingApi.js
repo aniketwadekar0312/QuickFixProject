@@ -1,50 +1,32 @@
 import api from "./api";
 
 // Bookings API functions
-export const createBooking = async ({bookingData}) => {
+export const createBooking = async ( bookingData ) => {
   try {
-    // Make API call to create booking
-   const response = await axios.post("/bookings", bookingData, {
-  headers: { "Content-Type": "application/json" },
-});
-    
-    // If payment method is online, create payment intent
-    if (bookingData.paymentMethod === 'online') {
-      // Return booking data and client secret for Stripe
-      return {
-        booking: response.data.booking,
-        clientSecret: response.data.clientSecret
-      };
-    }
-    
-    // If COD, just return booking data
-    return {
-      booking: response.data.booking
-    };
+    const response = await api.post("/v1/book", bookingData);
+    return response.data;
   } catch (error) {
-    console.error('Error creating booking:', error);
+    console.error("Error creating booking:", error);
     throw error;
   }
 };
 
-export const confirmPayment = async (bookingId, paymentIntentId) => {
+export const createPaymentIntent = async (amount) => {
   try {
-    const response = await api.post(`/bookings/${bookingId}/payment-confirm`, {
-      paymentIntentId
-    });
+    const response = await api.post(`/v1/payment-intent`, amount);
     return response.data;
   } catch (error) {
-    console.error('Error confirming payment:', error);
+    console.error("Error confirming payment:", error);
     throw error;
   }
 };
 
 export const getUserBookings = async () => {
   try {
-    const response = await api.get('/bookings');
+    const response = await api.get("/bookings");
     return response.data;
   } catch (error) {
-    console.error('Error fetching user bookings:', error);
+    console.error("Error fetching user bookings:", error);
     throw error;
   }
 };
@@ -76,7 +58,7 @@ export const getSavedPaymentMethods = async () => {
     {
       id: "pm1",
       cardNumber: "**** **** **** 4242",
-      cardType: "Visa", 
+      cardType: "Visa",
       expiryDate: "12/25",
       isDefault: true,
     },
@@ -86,6 +68,6 @@ export const getSavedPaymentMethods = async () => {
       cardType: "Mastercard",
       expiryDate: "08/24",
       isDefault: false,
-    }
+    },
   ];
 };

@@ -11,15 +11,10 @@ import BookingSummary from "@/components/booking/BookingSummary";
 import PaymentSection from "@/components/booking/PaymentSection";
 import { getService } from "../api/servicesApi";
 import { getUsers } from "../api/authServices";
-import { createBooking, confirmPayment } from "@/api/bookingApi";
-import { loadStripe } from "@stripe/stripe-js";
+import { createBooking, createPaymentIntent } from "../api/bookingApi";
+import axios from "axios";
 
-// Load Stripe outside of components to avoid recreating Stripe object on every render
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
-
-
-const BookService = () => {
+const BookService = ({ stripePromise }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -29,19 +24,19 @@ const BookService = () => {
   const [selectedWorker, setSelectedWorker] = useState("");
   const [date, setDate] = useState(undefined);
   const [timeSlot, setTimeSlot] = useState("");
-  const [address, setAddress] = useState("");
-  const [additionalNotes, setAdditionalNotes] = useState("");
+  const [address, setAddress] = useState(
+    "123, ABC Road, South East, Mumbai - 400065"
+  );
+  const [additionalNotes, setAdditionalNotes] = useState("ABC XYZ");
   const [paymentMethod, setPaymentMethod] = useState("online");
   const [contactNumber, setContactNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [services, setServices] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [clientSecret, setClientSecret] = useState(null);
-  const [bookingId, setBookingId] = useState(null);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPaymentId, setSelectedPaymentId] = useState("");
-  
 
   // Mock saved payment methods (in a real app, this would come from an API)
   const [paymentMethods, setPaymentMethods] = useState([
@@ -98,14 +93,12 @@ const BookService = () => {
   const workerName = selectedWorker
     ? workers.find((w) => w.id === selectedWorker)?.name
     : undefined;
-  // const serviceName=
-  // console.log(serviceDetails);
 
   useEffect(() => {
     if (serviceDetails) {
       setSelectedService(serviceDetails.id);
     }
-    
+
     if (currentUser?.phone) {
       setContactNumber(currentUser.phone);
     }
@@ -157,7 +150,6 @@ const BookService = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
     if (!isAuthenticated) {
       toast({
         title: "Authentication Required",
@@ -167,7 +159,7 @@ const BookService = () => {
       navigate("/login");
       return;
     }
-    if (paymentMethod === "online" && !selectedPaymentId && !clientSecret) {
+    if (!selectedPaymentId) {
       toast({
         title: "Payment Method Required",
         description: "Please select a payment method.",
@@ -177,8 +169,7 @@ const BookService = () => {
     }
     setIsSubmitting(true);
     try {
-      // Calculate total amount (this should match server-side calculation)
-      const totalAmount = serviceDetails ? serviceDetails.price + 49 : 0;
+      const totalAmount = serviceDetails ? serviceDetails.price + 49 : 10;
       // Prepare booking data
       const bookingData = {
         serviceId: selectedService,
@@ -190,48 +181,55 @@ const BookService = () => {
         paymentMethod,
         paymentId: selectedPaymentId,
         contactNumber,
-        totalAmount
+        totalAmount,
       };
-      
-      // If this is a new submission (not a payment confirmation)
-      if (!clientSecret) {
-        // Create booking and get payment intent if online payment
-        const response = await createBooking(bookingData);
-        
-        if (paymentMethod === "online" && response.clientSecret) {
-          // If online payment, set the client secret for the payment
-          setClientSecret(response.clientSecret);
-          setBookingId(response.booking._id);
-          
-          // At this point, the Stripe Elements form will handle the payment
-          // using the client secret. The form submission will be handled
-          // by the Stripe Elements component.
-          setIsSubmitting(false);
-          return;
-        } else {
-          // For COD, we're done
+
+      if (paymentMethod === "online") {
+        // const clientSecret = await createPaymentIntent(totalAmount);
+        const token = localStorage.getItem("token");
+
+        const amountInPaise = 1 * 100; // ₹1 = 100 paise
+        const { data } = await axios.post(
+          "http://localhost:5000/api/v1/payment-intent",
+          {
+            amount: amountInPaise, // Amount goes here (₹10 = 10)
+            currency: "inr",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Token should be here
+              "Content-Type": "application/json", // Fix incorrect key name
+            },
+          }
+        );
+        setClientSecret(data.paymentIntent.client_secret);
+        // const result = await stripe.confirmCardPayment(data.paymentIntent.client_secret, {
+        //   payment_method: { card: elements.getElement(CardElement) },
+        // });
+
+        const response = await createBooking({
+          ...bookingData,
+          paymentIntentId: data.paymentIntent.id,
+        });
+        if (response.data.status) {
           toast({
             title: "Booking Successful",
             description: "Your service has been booked successfully!",
           });
-          
+          setIsSubmitting(false);
           navigate("/customer/dashboard");
         }
-      } else if (bookingId) {
-        // This is a payment confirmation
-        // The payment intent ID would be handled by Stripe Elements
-        // We're just handling the booking confirmation here
-        await confirmPayment(bookingId, "pi_success");
-        
-        toast({
-          title: "Payment Successful",
-          description: "Your payment has been processed and your booking is confirmed.",
-        });
-        
-        navigate("/customer/dashboard");
+      } else {
+        const response = await createBooking(bookingData);
+        if (response.data.status) {
+          toast({
+            title: "Booking Successful",
+            description: "Your service has been booked successfully!",
+          });
+          setIsSubmitting(false);
+          navigate("/customer/dashboard");
+        }
       }
-      
-      setIsSubmitting(false);
     } catch (error) {
       console.error("Error in booking process:", error);
       toast({
@@ -243,7 +241,6 @@ const BookService = () => {
       setIsSubmitting(false);
     }
   };
-
   const addNewPaymentMethod = () => {
     navigate("/customer/payment-methods");
   };
@@ -346,31 +343,6 @@ const BookService = () => {
                     stripePromise={stripePromise}
                   />
                 )}
-
-                {/* <BookingForm
-                  selectedService={selectedService}
-                  setSelectedService={setSelectedService}
-                  selectedWorker={selectedWorker}
-                  setSelectedWorker={setSelectedWorker}
-                  date={date}
-                  setDate={setDate}
-                  timeSlot={timeSlot}
-                  setTimeSlot={setTimeSlot}
-                  address={address}
-                  setAddress={setAddress}
-                  additionalNotes={additionalNotes}
-                  setAdditionalNotes={setAdditionalNotes}
-                  paymentMethod={paymentMethod}
-                  setPaymentMethod={setPaymentMethod}
-                  contactNumber={contactNumber}
-                  setContactNumber={setContactNumber}
-                  handleSubmit={handleSubmit}
-                  isSubmitting={isSubmitting}
-                  serviceDetails={serviceDetails}
-                  services={services}
-                  workers={workers}
-                  workerName={workerName}
-                /> */}
               </div>
 
               <div>

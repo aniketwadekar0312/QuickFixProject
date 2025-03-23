@@ -4,19 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CreditCard, Wallet, PlusCircle, ArrowLeft } from "lucide-react";
-import { 
-  Elements, 
-  CardElement, 
-  useStripe, 
-  useElements,
-  PaymentElement
-} from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
-
-// Initialize Stripe (replace with your publishable key)
-// In production, this would come from environment variables
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
+import { useStripe, useElements, CardElement, Elements } from "@stripe/react-stripe-js";
 
 // The Stripe form component
 const StripeCardForm = ({ 
@@ -24,7 +12,6 @@ const StripeCardForm = ({
   handleSubmit,
   handlePreviousStep,
   clientSecret,
-  
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -33,53 +20,42 @@ const StripeCardForm = ({
   // Handle the payment submission
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!stripe || !elements) {
-      return;
-    }
-    
+
+    if (!stripe || !elements) return;
+
+    setCardError("");
+
     const cardElement = elements.getElement(CardElement);
-    
+
     if (!cardElement) {
       return;
     }
-    
-    // Validate the card input before submitting
-    const { error } = await stripe.createToken(cardElement);
-    
+
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardElement,
+      billing_details: {
+        name: "Customer Name",
+        email: "customer@example.com",
+      },
+    });
+
     if (error) {
       setCardError(error.message || "An error occurred with your card");
-      return;
-    }
-    
-    // If card is valid, proceed with booking
-    // If card is valid, proceed with payment
-    setCardError("");
-    
-    // Process the payment using the client secret if available
+      return
+    } 
+
     if (clientSecret) {
-      const result = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            // You can add billing details here if needed
-          },
-        }
+      const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: paymentMethod.id, // Use the payment method ID
       });
-      
-      if (result.error) {
-        // Show error to your customer
-        setCardError(result.error.message || "Payment failed");
-      } else {
-        if (result.paymentIntent?.status === 'succeeded') {
-          // Payment successful, now finalize the booking
-          handleSubmit(e);
-        }
+      if (error) {
+        setCardError(error.message || "Payment failed");
+      } else if (paymentIntent?.status === "succeeded") {
+        handleSubmit(e); // Proceed with booking
       }
-    } else {
-      // If no client secret (unusual), just proceed with booking
-      handleSubmit(e);
     }
+     
   };
 
   return (
@@ -149,7 +125,6 @@ const PaymentSection = ({
   handlePreviousStep,
   addNewPaymentMethod,
   clientSecret,
-  stripePromise
   
 }) => {
   const [useNewCard, setUseNewCard] = useState(false);
@@ -272,7 +247,7 @@ const PaymentSection = ({
                     </div>
                   )}
                 </div>
-              ) : (
+             ) : (
                 <Elements stripe={stripePromise} options={clientSecret ? { clientSecret } : undefined}>
                   <StripeCardForm
                     isSubmitting={isSubmitting}
@@ -281,7 +256,7 @@ const PaymentSection = ({
                     clientSecret={clientSecret}
                   />
                 </Elements>
-              )}
+              )} 
             </div>
           )}
           

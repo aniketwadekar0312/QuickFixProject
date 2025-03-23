@@ -15,7 +15,7 @@ export const getUsers = async () => {
 };
 
 export const getUserById = async (id) => {
-  return await axiosInstance.get(`/v1/user/${id}`); // ✅ Return only .data
+  return await axiosInstance.get(`/v1/user/${id}`).data; // ✅ Return only .data
 };
 
 export const updateUserProfile = async (id,data) => {

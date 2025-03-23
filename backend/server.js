@@ -6,7 +6,7 @@ const path = require('path');
 const userRouter=require("./routes/userRoute.js");
 const categoryRouter = require("./routes/ServiceCategoryRoute.js");
 const servicesRouter = require("./routes/ServicesRoute.js");
-const bookingRouter = require("../backend/routes/booking.js");
+const bookingRouter = require("../backend/routes/bookingRoute.js");
 // Load environment variables
 dotenv.config();
 
@@ -23,7 +23,7 @@ app.use(express.json());
 app.use('/api/v1', userRouter);
 app.use('/api/v1', categoryRouter);
 app.use('/api/v1', servicesRouter);
-app.use('/api/bookings', bookingRouter);
+app.use('/api/v1', bookingRouter);
 
 
 // Serve static assets if in production
