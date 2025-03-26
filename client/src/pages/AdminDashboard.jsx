@@ -20,13 +20,14 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { getDashboardStats, getAllBookings } from "../api/adminServices";
 import {
-  mockWorkers,
-  mockBookings,
-  mockUsers,
-  mockServices,
-} from "@/data/mockData";
+  getDashboardStats,
+  getAllBookings,
+  getCustomers,
+  getWorkers,
+  updateWorkerStatus,
+} from "../api/adminServices";
+
 import {
   Search,
   UserCheck,
@@ -34,7 +35,6 @@ import {
   ClipboardList,
   Users,
   BarChart3,
-  Percent,
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -42,20 +42,8 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [stats, setStats] = useState(null);
   const [booking, setBooking] = useState([]);
-
-  const pendingWorkers = mockWorkers.filter(
-    (worker) =>
-      worker.status === "pending" &&
-      (worker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        worker.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const handleWorkerAction = (workerId, action) => {
-    toast({
-      title: `Worker ${action === "approve" ? "approved" : "rejected"}`,
-      description: `The worker has been successfully ${action}.`,
-    });
-  };
+  const [customer, setCustomer] = useState([]);
+  const [worker, setWorker] = useState([]);
 
   const getDashboardStatics = async () => {
     try {
@@ -79,11 +67,65 @@ const AdminDashboard = () => {
     }
   };
 
+  const getCustomer = async () => {
+    try {
+      const { status, users } = await getCustomers();
+      if (status) {
+        setCustomer(users);
+      }
+    } catch (error) {
+      console.log("error in getCustomer", error);
+    }
+  };
+
+  const getWorker = async () => {
+    try {
+      const { status, workers } = await getWorkers();
+      if (status) {
+        setWorker(workers);
+      }
+    } catch (error) {
+      console.log("error in getCustomer", error);
+    }
+  };
+
+  const handleWorkerAction = async (workerId, action) => {
+    try {
+      const { status } = await updateWorkerStatus({ workerId, status: action });
+      if (status) {
+        toast({
+          title: `Worker ${action === "approve" ? "approved" : "rejected"}`,
+          description: `The worker has been successfully ${action}.`,
+        });
+        getWorker()
+      }
+    } catch (error) {
+      console.log("error in handleWorkerAction", error);
+      toast({
+        title: "Action failed",
+        description: "Failed to update worker status",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     getDashboardStatics();
     getBookings();
+    getCustomer();
+    getWorker();
   }, []);
- 
+
+  const formattedDate = (date) => {
+    const dateString = new Date(date);
+    const formattedDate = dateString.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    return formattedDate;
+  };
+
   return (
     <Layout>
       <div className="bg-gray-50 py-12">
@@ -177,33 +219,31 @@ const AdminDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockBookings.slice(0, 5).map((booking) => (
-                      <TableRow key={booking.id}>
-                        <TableCell className="font-medium">
-                          {mockServices.find((s) => s.id === booking.serviceId)
-                            ?.name || "Unknown"}
-                        </TableCell>
-                        <TableCell>
-                          {mockUsers.find((u) => u.id === booking.customerId)
-                            ?.name || "Unknown"}
-                        </TableCell>
-                        <TableCell>
-                          {mockWorkers.find((w) => w.id === booking.workerId)
-                            ?.name || "Unknown"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={getStatusBadgeVariant(booking.status)}
-                          >
-                            {booking.status.charAt(0).toUpperCase() +
-                              booking.status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          ₹{booking.price}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {booking.length > 0 &&
+                      booking.map((booking) => (
+                        <TableRow key={booking._id}>
+                          <TableCell className="font-medium">
+                            {booking?.service?.name || "Unknown"}
+                          </TableCell>
+                          <TableCell>
+                            {booking?.customer?.name || "Unknown"}
+                          </TableCell>
+                          <TableCell>
+                            {booking?.worker?.name || "Unknown"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={getStatusBadgeVariant(booking.status)}
+                            >
+                              {booking.status.charAt(0).toUpperCase() +
+                                booking.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            ₹{booking?.totalAmount}
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -222,9 +262,7 @@ const AdminDashboard = () => {
                     </span>
                     <span className="font-medium">
                       {Math.round(
-                        (stats?.completedBookings /
-                          stats?.totalBookings) *
-                          100
+                        (stats?.completedBookings / stats?.totalBookings) * 100
                       ) || 0}
                       %
                     </span>
@@ -234,8 +272,7 @@ const AdminDashboard = () => {
                       className="bg-green-600 h-2 rounded-full"
                       style={{
                         width: `${
-                          (stats?.completedBookings /
-                            stats?.totalBookings) *
+                          (stats?.completedBookings / stats?.totalBookings) *
                           100
                         }%`,
                       }}
@@ -249,8 +286,7 @@ const AdminDashboard = () => {
                     <span className="font-medium">
                       {Math.round(
                         (stats?.approvedWorkers /
-                          (stats?.approvedWorkers +
-                            stats?.pendingWorkers)) *
+                          (stats?.approvedWorkers + stats?.pendingWorkers)) *
                           100
                       ) || 0}
                       %
@@ -262,8 +298,7 @@ const AdminDashboard = () => {
                       style={{
                         width: `${
                           (stats?.approvedWorkers /
-                            (stats?.approvedWorkers +
-                              stats?.pendingWorkers)) *
+                            (stats?.approvedWorkers + stats?.pendingWorkers)) *
                           100
                         }%`,
                       }}
@@ -318,79 +353,86 @@ const AdminDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {pendingWorkers.length > 0 ? (
+                  {worker.filter((w) => w.status === "pending").length > 0 ? (
                     <div className="space-y-4">
-                      {pendingWorkers.map((worker) => (
-                        <div
-                          key={worker.id}
-                          className="border rounded-lg p-4 hover:border-brand-200 transition-colors"
-                        >
-                          <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-shrink-0">
-                              <img
-                                src={worker.photoUrl}
-                                alt={worker.name}
-                                className="w-16 h-16 rounded-full object-cover"
-                              />
-                            </div>
-                            <div className="flex-grow">
-                              <h3 className="font-semibold text-lg">
-                                {worker.name}
-                              </h3>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                <div className="text-gray-600 text-sm">
-                                  <span className="font-medium">Email:</span>{" "}
-                                  {worker.email}
+                      {worker
+                        .filter((w) => w.status === "pending")
+                        .map((worker) => (
+                          <div
+                            key={worker._id}
+                            className="border rounded-lg p-4 hover:border-brand-200 transition-colors"
+                          >
+                            <div className="flex flex-col md:flex-row gap-4">
+                              <div className="flex-shrink-0">
+                                <img
+                                  src={
+                                    worker?.photoUrl ||
+                                    "https://elouwerse.nl/placecircle/200"
+                                  }
+                                  alt={worker?.name}
+                                  className="w-16 h-16 rounded-full object-cover"
+                                />
+                              </div>
+                              <div className="flex-grow">
+                                <h3 className="font-semibold text-lg">
+                                  {worker?.name}
+                                </h3>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  <div className="text-gray-600 text-sm">
+                                    <span className="font-medium">Email:</span>{" "}
+                                    {worker?.email}
+                                  </div>
+                                  <div className="text-gray-600 text-sm">
+                                    <span className="font-medium">Phone:</span>{" "}
+                                    {worker?.phone}
+                                  </div>
+                                  <div className="text-gray-600 text-sm">
+                                    <span className="font-medium">
+                                      Location:
+                                    </span>{" "}
+                                    {worker?.location}
+                                  </div>
                                 </div>
-                                <div className="text-gray-600 text-sm">
-                                  <span className="font-medium">Phone:</span>{" "}
-                                  {worker.phone}
+                                <div className="mt-2">
+                                  <span className="font-medium">Services:</span>{" "}
+                                  {worker?.services.join(", ")}
                                 </div>
-                                <div className="text-gray-600 text-sm">
-                                  <span className="font-medium">Location:</span>{" "}
-                                  {worker.location}
+                                <div className="mt-1">
+                                  <p className="text-sm text-gray-600">
+                                    {worker?.description}
+                                  </p>
                                 </div>
                               </div>
-                              <div className="mt-2">
-                                <span className="font-medium">Services:</span>{" "}
-                                {worker.services.join(", ")}
+                              <div className="flex-shrink-0 flex flex-col md:items-end justify-start gap-2">
+                                <Button
+                                  className="w-full md:w-auto"
+                                  onClick={() =>
+                                    handleWorkerAction(worker._id, "approved")
+                                  }
+                                >
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="w-full md:w-auto"
+                                  onClick={() =>
+                                    handleWorkerAction(worker._id, "rejected")
+                                  }
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Reject
+                                </Button>
+                                <Button
+                                  variant="link"
+                                  className="w-full md:w-auto"
+                                >
+                                  View Documents
+                                </Button>
                               </div>
-                              <div className="mt-1">
-                                <p className="text-sm text-gray-600">
-                                  {worker.description}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0 flex flex-col md:items-end justify-start gap-2">
-                              <Button
-                                className="w-full md:w-auto"
-                                onClick={() =>
-                                  handleWorkerAction(worker.id, "approve")
-                                }
-                              >
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Approve
-                              </Button>
-                              <Button
-                                variant="outline"
-                                className="w-full md:w-auto"
-                                onClick={() =>
-                                  handleWorkerAction(worker.id, "reject")
-                                }
-                              >
-                                <UserX className="h-4 w-4 mr-2" />
-                                Reject
-                              </Button>
-                              <Button
-                                variant="link"
-                                className="w-full md:w-auto"
-                              >
-                                View Documents
-                              </Button>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -429,28 +471,31 @@ const AdminDashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mockWorkers.slice(0, 6).map((worker) => (
-                        <TableRow key={worker.id}>
+                      {worker.map((worker) => (
+                        <TableRow key={worker._id}>
                           <TableCell className="font-medium">
-                            {worker.name}
+                            {worker?.name}
                           </TableCell>
-                          <TableCell>{worker.services.join(", ")}</TableCell>
-                          <TableCell>{worker.location}</TableCell>
+                          <TableCell>{worker?.services.join(", ")}</TableCell>
+                          <TableCell>
+                            {worker?.location.charAt(0).toUpperCase() +
+                              worker?.location.slice(1)}
+                          </TableCell>
                           <TableCell>
                             <Badge
                               variant={
-                                worker.status === "approved"
+                                worker?.status === "approved"
                                   ? "default"
-                                  : worker.status === "pending"
+                                  : worker?.status === "pending"
                                   ? "outline"
                                   : "destructive"
                               }
                             >
-                              {worker.status.charAt(0).toUpperCase() +
-                                worker.status.slice(1)}
+                              {worker?.status.charAt(0).toUpperCase() +
+                                worker?.status.slice(1)}
                             </Badge>
                           </TableCell>
-                          <TableCell>{worker.rating.toFixed(1)}</TableCell>
+                          <TableCell>{worker?.rating.toFixed(1)}</TableCell>
                           <TableCell className="text-right">
                             <Button variant="link" size="sm">
                               View
@@ -483,24 +528,28 @@ const AdminDashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mockUsers
-                        .filter((user) => user.role === "customer")
-                        .map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell className="font-medium">
-                              {user.name}
-                            </TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.phone}</TableCell>
+                      {customer.length > 0 &&
+                        customer.map((customer) => (
+                          <TableRow key={customer._id}>
                             <TableCell>
-                              {user.createdAt.toLocaleDateString()}
+                              <div className="flex items-center gap-2">
+                                <div className="w-10 h-10">
+                                  <img
+                                    src={customer.photoUrl}
+                                    alt={customer.name}
+                                    className="w-10 h-10 rounded-full object-cover"
+                                  />
+                                </div>
+                                <div>{customer?.name}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{customer?.email}</TableCell>
+                            <TableCell>{customer?.phone}</TableCell>
+                            <TableCell>
+                              {formattedDate(customer?.createdAt)}
                             </TableCell>
                             <TableCell>
-                              {
-                                mockBookings.filter(
-                                  (b) => b.customerId === user.id
-                                ).length
-                              }
+                              {customer?.bookings?.length || 0}
                             </TableCell>
                             <TableCell className="text-right">
                               <Button variant="link" size="sm">

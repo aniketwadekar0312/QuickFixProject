@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
         // Save user & token in localStorage
         localStorage.setItem("currentUser", JSON.stringify(user));
         localStorage.setItem("token", token);
-
+        
         setCurrentUser(user);
 
         toast({

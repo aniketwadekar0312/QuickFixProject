@@ -39,7 +39,7 @@ const CustomerDashboard = () => {
   const getCustomerBookings = async () => {
     try {
       const res = await getBookingByCustomerId();
-     
+
       if (Array.isArray(res.bookings)) {
         setBookings(res.bookings);
       } else {
@@ -48,7 +48,7 @@ const CustomerDashboard = () => {
     } catch (error) {
       console.error("Error fetching bookings:", error);
     }
-  };  
+  };
 
   useEffect(() => {
     getCustomerBookings();
@@ -62,7 +62,7 @@ const CustomerDashboard = () => {
     });
     return formattedDate;
   };
-  
+
   return (
     <Layout>
       <div className="bg-gray-50 py-12">
@@ -149,11 +149,11 @@ const CustomerDashboard = () => {
                       <CardTitle>Current Bookings</CardTitle>
                     </CardHeader>
                     <CardContent>
-                    { bookings.length > 0 ? (
+                      {bookings.length > 0 ? (
                         <div className="space-y-4">
                           {bookings.map((booking, index) => (
                             <div
-                            key={booking._id || index} 
+                              key={booking._id || index}
                               className="border rounded-lg p-4 hover:border-brand-200 transition-colors"
                             >
                               <div className="flex flex-col md:flex-row justify-between">
@@ -229,8 +229,9 @@ const CustomerDashboard = () => {
                       <CardTitle>Booking History</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {bookings.filter((b) => b.status === "completed").length >
-                      0 ? (
+                      {bookings.length > 0 &&
+                      bookings?.filter((b) => b?.status === "completed")
+                        .length > 0 ? (
                         <div className="space-y-4">
                           {bookings
                             .filter((b) => b.status === "completed")
@@ -242,18 +243,19 @@ const CustomerDashboard = () => {
                                 <div className="flex flex-col md:flex-row justify-between">
                                   <div>
                                     <h3 className="font-semibold text-lg">
-                                      {findServiceName(booking?.service)}
+                                      {booking?.service?.name ||
+                                        "Unknown Service"}
                                     </h3>
                                     <p className="text-gray-600">
                                       Service Provider:{" "}
-                                      {findWorkerName(booking?.worker)}
+                                      {booking?.worker?.name ||
+                                        "Unknown Worker"}
                                     </p>
                                     <div className="flex items-center text-gray-600 mt-2">
                                       <Calendar className="h-4 w-4 mr-1" />
                                       <span>
-                                        {formattedDate(booking?.date) ||
-                                          ""}{" "}
-                                        at {booking?.timeSlot || ""}
+                                        {formattedDate(booking?.date) || ""} at{" "}
+                                        {booking?.timeSlot || ""}
                                       </span>
                                     </div>
                                     <div className="flex items-center mt-2">

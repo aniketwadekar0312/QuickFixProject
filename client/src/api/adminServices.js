@@ -16,4 +16,19 @@ export const getDashboardStats = async () => {
 export const getAllBookings = async () => {
   const response = await axiosInstance.get("/v1/admin/bookings");
   return response.data;
+};
+
+export const getCustomers = async () => {
+  const response = await axiosInstance.get("/v1/admin/customers");
+  return response.data;
+};
+
+export const getWorkers = async () => {
+  const response = await axiosInstance.get("/v1/admin/workers");
+  return response.data;
+};
+
+export const updateWorkerStatus = async (data) => {
+  const response = await axiosInstance.put("/v1/admin/workers", data);
+  return response.data;
 }

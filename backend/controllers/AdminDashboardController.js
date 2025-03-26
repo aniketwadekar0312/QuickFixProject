@@ -53,4 +53,43 @@ const getAllBookings = async (req, res) => {
   }
 };
 
-module.exports = { getDashboardSummary, getAllBookings };
+
+const getCustomers = async (req, res) => {
+  try {
+    const users = await User.find({role: "customer"}).select(
+      "name email phone photoUrl createdAt"
+    ).populate("bookings");
+
+    return res.status(200).json({ status: true, users });
+  } catch (error) {
+    console.error("Error fetching Customers:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+
+const getWorkers = async (req, res) => { 
+  try {
+    const workers = await User.find({ role: "worker" });
+
+    return res.status(200).json({ status: true, workers });
+  }
+  catch (error) {
+    console.error("Error fetching Workers:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+const updateWorkerStatus = async (req, res) => {
+  try {
+    const { workerId, status } = req.body;
+    const worker = await User.findByIdAndUpdate(workerId, { status }, { new: true });
+    return res.status(200).json({ status: true, worker });
+  }
+  catch (error) {
+    console.error("Error updating worker status:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+}
+
+module.exports = { getDashboardSummary, getAllBookings, getCustomers, getWorkers, updateWorkerStatus };

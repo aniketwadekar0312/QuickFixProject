@@ -76,6 +76,12 @@ const createBooking = async (req, res) => {
 
     await booking.save();
 
+
+    await User.findOneAndUpdate(
+      { _id: req.user._id },
+      { $push: { bookings: booking._id } },
+      {new: true}
+    )
     return res
       .status(200)
       .json({ status: true, message: "Booking is created", booking });

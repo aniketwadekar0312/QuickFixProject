@@ -13,7 +13,7 @@ const UserSchema = new mongoose.Schema(
     },
     photoUrl: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
-
+    bookings: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
     // Worker-Specific Fields (Only applicable if role === "worker")
     services: [{ type: String }], // List of services worker provides
     specializations: [{ type: String }], // Worker expertise
