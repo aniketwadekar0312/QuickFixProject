@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const adminAuth = require('../middleware/adminAuth');
+const {isAdmin} = require('../middleware/adminAuth');
 const {addService, getService, getServiceById, updateService, deleteService} = require('../controllers/ServiceController');
 const {verifyUser} = require('../middleware/auth');
 
@@ -17,16 +17,16 @@ router.get('/service/:id', getServiceById);
 // @route   POST api/services
 // @desc    Create a service
 // @access  Private (Admin only)
-router.post('/service', [verifyUser, adminAuth], addService);
+router.post('/service', verifyUser, isAdmin, addService);
 
 // @route   PUT api/services/:id
 // @desc    Update a service
 // @access  Private (Admin only)
-router.put('/service/:id', [verifyUser, adminAuth], updateService);
+router.put('/service/:id', verifyUser, isAdmin, updateService);
 
 // @route   DELETE api/services/:id
 // @desc    Delete a service
 // @access  Private (Admin only)
-router.delete('/service/:id', [verifyUser, adminAuth], deleteService);
+router.delete('/service/:id', verifyUser, isAdmin, deleteService);
 
 module.exports = router;

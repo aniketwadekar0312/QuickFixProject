@@ -39,29 +39,25 @@ const createBooking = async (req, res) => {
     } = req.body;
 
     // Retrieve Payment Intent from Stripe
-//     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-// console.log(paymentIntent);
-//     if (paymentIntent.status !== "succeeded") {
-//       return res
-//         .status(400)
-//         .json({ status: false, message: "Payment not successful" });
-//     }
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status !== "succeeded") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Payment not successful" });
+    }
 
     // Check if service exists
     const service = await Service.findById(serviceId);
     if (!service) {
-      return res.status(404).json({ msg: "Service not found" });
+      return res.status(404).json({status: false, msg: "Service not found" });
     }
 
     // Check if worker exists
     const worker = await User.findById(workerId);
     if (!worker || worker.role !== "worker") {
-      return res.status(404).json({ msg: "Worker not found" });
+      return res.status(404).json({status: false, msg: "Worker not found" });
     }
-
-    // Calculate total amount
-    //const platformFee = 49; // Example platform fee
-    // const totalAmount = price ;
 
     const booking = new Booking({
       customer: req.user._id,
@@ -89,19 +85,23 @@ const createBooking = async (req, res) => {
   }
 };
 
-// Get all bookings (for admin or worker)
-const getAllBookings = async (req, res) => {
+
+const getBookingsByCustomerId = async (req, res) => {
   try {
-    const bookings = await Booking.find().populate("customer worker service");
-    res.status(200).json({ success: true, bookings });
+    const bookings = await Booking.find({ customer: String(req.user._id) }).populate(
+      "worker service"
+    );
+  return  res.status(200).json({ success: true, bookings });
   } catch (error) {
+    console.log("Error fetching bookings", error);
     res.status(500).json({
       success: false,
-      message: "Error fetching bookings",
-      error: error.message,
+      message: "Error fetching bookings"
     });
   }
-};
+}
+
+
 
 // Get bookings for a specific customer
 const getBookingsByCustomer = async (req, res) => {
@@ -204,9 +204,9 @@ const deleteBooking = async (req, res) => {
 module.exports = {
   createPaymentIntent,
   createBooking,
-  getAllBookings,
   getBookingsByCustomer,
   getBookingsByWorker,
   updateBookingStatus,
   deleteBooking,
+  getBookingsByCustomerId
 };

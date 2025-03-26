@@ -91,6 +91,7 @@ const login = async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "10d",
     });
+
     return res
       .status(200)
       .json({
@@ -177,5 +178,6 @@ const updateUser = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
 
 module.exports = { register, login, getUsers, updateUser, getUserById };

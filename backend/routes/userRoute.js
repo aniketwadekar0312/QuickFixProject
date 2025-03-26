@@ -1,5 +1,7 @@
 const express=require("express");
 const router=express.Router();
+const {isAdmin} = require("../middleware/adminAuth.js");
+const {verifyUser} = require("../middleware/auth.js");
 const {register, login, updateUser, getUsers, getUserById}=require("../controllers/UserController.js");
 
 router.post("/register",register);

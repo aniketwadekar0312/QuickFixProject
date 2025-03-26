@@ -13,8 +13,12 @@ import { getService } from "../api/servicesApi";
 import { getUsers } from "../api/authServices";
 import { createBooking, createPaymentIntent } from "../api/bookingApi";
 import axios from "axios";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+const stripePromise = loadStripe("pk_test_51MX036SABObgi1uhHXCwZMh1JkOuNafgiCZWnvEEzRHTPNDRFbwlOr5TOopcgNnuMQ0gDTnqWKWlZhzlrHZUTKH800JIj4QVSP");
 
-const BookService = ({ stripePromise }) => {
+
+const BookService = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -34,7 +38,7 @@ const BookService = ({ stripePromise }) => {
   const [services, setServices] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [clientSecret, setClientSecret] = useState(null);
-
+const [paymentIntentId, setPaymentIntentId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPaymentId, setSelectedPaymentId] = useState("");
 
@@ -42,9 +46,9 @@ const BookService = ({ stripePromise }) => {
   const [paymentMethods, setPaymentMethods] = useState([
     {
       id: "pm1",
-      cardNumber: "**** **** **** 4242",
+      cardNumber: "4242 4242 4242 4242",
       cardType: "Visa",
-      expiryDate: "12/25",
+      expiryDate: "12/34",
       isDefault: true,
     },
     {
@@ -108,6 +112,31 @@ const BookService = ({ stripePromise }) => {
     }
   }, [serviceDetails, currentUser, paymentMethods]);
 
+  const initiatePayment = async( ) => {
+    try {
+      const token = localStorage.getItem("token");
+
+        const amountInPaise = 1 * 100; // ₹1 = 100 paise
+        const { data } = await axios.post(
+          "http://localhost:5000/api/v1/payment-intent",
+          {
+            amount: amountInPaise, // Amount goes here (₹10 = 10)
+            currency: "inr",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Token should be here
+              "Content-Type": "application/json", // Fix incorrect key name
+            },
+          }
+        );
+        setClientSecret(data.paymentIntent.client_secret);
+        setPaymentIntentId(data.paymentIntent.id);
+    } catch (error) {
+      console.log('error in payment', error)
+    }
+  }
+
   const handleNextStep = () => {
     if (!isAuthenticated) {
       toast({
@@ -137,6 +166,7 @@ const BookService = ({ stripePromise }) => {
       }
 
       // Move to payment step
+      initiatePayment()
       setCurrentStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -185,33 +215,13 @@ const BookService = ({ stripePromise }) => {
       };
 
       if (paymentMethod === "online") {
-        // const clientSecret = await createPaymentIntent(totalAmount);
-        const token = localStorage.getItem("token");
-
-        const amountInPaise = 1 * 100; // ₹1 = 100 paise
-        const { data } = await axios.post(
-          "http://localhost:5000/api/v1/payment-intent",
-          {
-            amount: amountInPaise, // Amount goes here (₹10 = 10)
-            currency: "inr",
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`, // Token should be here
-              "Content-Type": "application/json", // Fix incorrect key name
-            },
-          }
-        );
-        setClientSecret(data.paymentIntent.client_secret);
-        // const result = await stripe.confirmCardPayment(data.paymentIntent.client_secret, {
-        //   payment_method: { card: elements.getElement(CardElement) },
-        // });
-
+        console.log('calling createBooking')
         const response = await createBooking({
           ...bookingData,
-          paymentIntentId: data.paymentIntent.id,
+          paymentIntentId: paymentIntentId,
         });
-        if (response.data.status) {
+        
+        if (response.status) {
           toast({
             title: "Booking Successful",
             description: "Your service has been booked successfully!",
@@ -221,7 +231,7 @@ const BookService = ({ stripePromise }) => {
         }
       } else {
         const response = await createBooking(bookingData);
-        if (response.data.status) {
+        if (response.status) {
           toast({
             title: "Booking Successful",
             description: "Your service has been booked successfully!",
@@ -329,6 +339,7 @@ const BookService = ({ stripePromise }) => {
                     serviceDetails={serviceDetails}
                   />
                 ) : (
+                  <Elements stripe={stripePromise}>
                   <PaymentSection
                     paymentMethod={paymentMethod}
                     setPaymentMethod={setPaymentMethod}
@@ -340,8 +351,8 @@ const BookService = ({ stripePromise }) => {
                     handlePreviousStep={handlePreviousStep}
                     addNewPaymentMethod={addNewPaymentMethod}
                     clientSecret={clientSecret}
-                    stripePromise={stripePromise}
                   />
+                  </Elements>
                 )}
               </div>
 

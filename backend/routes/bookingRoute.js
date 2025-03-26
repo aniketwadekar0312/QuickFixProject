@@ -1,27 +1,34 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const {verifyUser} = require('../middleware/auth');
-const {createBooking, createPaymentIntent,getAllBookings, getBookingsByCustomer, getBookingsByWorker, updateBookingStatus, deleteBooking } = require("../controllers/BookingController")
+const { verifyUser } = require("../middleware/auth");
+const {
+  createBooking,
+  createPaymentIntent,
+  getBookingsByCustomer,
+  getBookingsByWorker,
+  updateBookingStatus,
+  getBookingsByCustomerId,
+  deleteBooking,
+} = require("../controllers/BookingController");
 
 // @route   POST api/bookings
 // @desc    Create a booking
 // @access  Private
-router.post('/payment-intent',verifyUser, createPaymentIntent);
-router.post('/book',verifyUser, createBooking);
+router.post("/payment-intent", verifyUser, createPaymentIntent);
+router.post("/book", verifyUser, createBooking);
 
 // @route   GET api/bookings
 // @desc    Get all bookings for current user
 // @access  Private
-router.get('/',);
+router.get("/customer/bookings", verifyUser, getBookingsByCustomerId);
 
 // @route   GET api/bookings/:id
 // @desc    Get booking by ID
 // @access  Private
-router.get('/:id', );
 
 // @route   PUT api/bookings/:id/status
 // @desc    Update booking status
 // @access  Private
-router.put('/:id/status', );
+router.put("/:id/status");
 
 module.exports = router;

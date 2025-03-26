@@ -4,11 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CreditCard, Wallet, PlusCircle, ArrowLeft } from "lucide-react";
-import { useStripe, useElements, CardElement, Elements } from "@stripe/react-stripe-js";
+import {
+  useStripe,
+  useElements,
+  CardElement
+} from "@stripe/react-stripe-js";
 
 // The Stripe form component
-const StripeCardForm = ({ 
-  isSubmitting, 
+const StripeCardForm = ({
+  isSubmitting,
   handleSubmit,
   handlePreviousStep,
   clientSecret,
@@ -42,24 +46,31 @@ const StripeCardForm = ({
 
     if (error) {
       setCardError(error.message || "An error occurred with your card");
-      return
-    } 
+      return;
+    }
 
     if (clientSecret) {
-      const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: paymentMethod.id, // Use the payment method ID
-      });
+      const { paymentIntent, error } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: paymentMethod.id, // Use the payment method ID
+        }
+      );
+      
       if (error) {
-        setCardError(error.message || "Payment failed");
+        console.log('error', error)
+        setCardError("Payment failed");
       } else if (paymentIntent?.status === "succeeded") {
-        handleSubmit(e); // Proceed with booking
+        handleSubmit(e); 
       }
+    }else{
+      setCardError("Payment failed");
+      console.log('Client secret not found')
     }
-     
   };
 
   return (
-    <form onSubmit={handlePaymentSubmit}>
+    // <form onSubmit={handlePaymentSubmit}>
       <div className="space-y-6">
         <div className="space-y-2">
           <Label>Card Details</Label>
@@ -68,14 +79,14 @@ const StripeCardForm = ({
               options={{
                 style: {
                   base: {
-                    fontSize: '16px',
-                    color: '#424770',
-                    '::placeholder': {
-                      color: '#aab7c4',
+                    fontSize: "16px",
+                    color: "#424770",
+                    "::placeholder": {
+                      color: "#aab7c4",
                     },
                   },
                   invalid: {
-                    color: '#9e2146',
+                    color: "#9e2146",
                   },
                 },
               }}
@@ -85,31 +96,32 @@ const StripeCardForm = ({
             <p className="text-sm text-red-500 mt-1">{cardError}</p>
           )}
         </div>
-        
+
         <div className="text-xs text-gray-500">
           Your card information is secured with SSL encryption.
         </div>
-        
+
         <div className="flex justify-between mt-8">
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={handlePreviousStep}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isSubmitting || !stripe}
             className="min-w-[120px]"
+            onClick={(e) =>handlePaymentSubmit(e)}
           >
             {isSubmitting ? "Processing..." : "Pay & Confirm"}
           </Button>
         </div>
       </div>
-    </form>
+    // </form>
   );
 };
 
@@ -125,20 +137,19 @@ const PaymentSection = ({
   handlePreviousStep,
   addNewPaymentMethod,
   clientSecret,
-  
 }) => {
   const [useNewCard, setUseNewCard] = useState(false);
-  
+
   const handlePaymentMethodChange = (value) => {
     setPaymentMethod(value);
-    
+
     // Reset selected payment ID if paying with cash
     if (value !== "online") {
       setSelectedPaymentId("");
       setUseNewCard(false);
     }
   };
-  
+
   return (
     <Card>
       <CardHeader>
@@ -153,25 +164,31 @@ const PaymentSection = ({
           >
             <div className="flex items-center space-x-2 border rounded-md p-3">
               <RadioGroupItem value="cod" id="cod" />
-              <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer">
+              <Label
+                htmlFor="cod"
+                className="flex items-center gap-2 cursor-pointer"
+              >
                 <Wallet className="h-5 w-5 text-yellow-600" />
                 Cash on Delivery
               </Label>
             </div>
-            
+
             <div className="flex items-center space-x-2 border rounded-md p-3">
               <RadioGroupItem value="online" id="online" />
-              <Label htmlFor="online" className="flex items-center gap-2 cursor-pointer">
+              <Label
+                htmlFor="online"
+                className="flex items-center gap-2 cursor-pointer"
+              >
                 <CreditCard className="h-5 w-5 text-blue-600" />
                 Online Payment
               </Label>
             </div>
           </RadioGroup>
-          
+
           {paymentMethod === "online" && (
             <div className="space-y-4 mt-4 border-t pt-4">
               <p className="font-medium text-sm">Select Payment Method</p>
-              
+
               {paymentMethods.length > 0 && !useNewCard && (
                 <RadioGroup
                   value={selectedPaymentId}
@@ -179,16 +196,23 @@ const PaymentSection = ({
                   className="space-y-3"
                 >
                   {paymentMethods.map((method) => (
-                    <div 
-                      key={method.id} 
+                    <div
+                      key={method.id}
                       className="flex items-center space-x-2 border rounded-md p-3"
                     >
                       <RadioGroupItem value={method.id} id={method.id} />
-                      <Label htmlFor={method.id} className="cursor-pointer flex-1">
+                      <Label
+                        htmlFor={method.id}
+                        className="cursor-pointer flex-1"
+                      >
                         <div className="flex justify-between">
                           <div>
-                            <p>{method.cardType} {method.cardNumber}</p>
-                            <p className="text-sm text-gray-500">Expires {method.expiryDate}</p>
+                            <p>
+                              {method.cardType} {method.cardNumber}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Expires {method.expiryDate}
+                            </p>
                           </div>
                           {method.isDefault && (
                             <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
@@ -201,7 +225,7 @@ const PaymentSection = ({
                   ))}
                 </RadioGroup>
               )}
-              
+
               {/* New Card Option */}
               {!useNewCard ? (
                 <div className="space-y-4">
@@ -248,36 +272,38 @@ const PaymentSection = ({
                   )}
                 </div>
              ) : (
-                <Elements stripe={stripePromise} options={clientSecret ? { clientSecret } : undefined}>
+               
                   <StripeCardForm
                     isSubmitting={isSubmitting}
                     handleSubmit={handleSubmit}
                     handlePreviousStep={handlePreviousStep}
                     clientSecret={clientSecret}
                   />
-                </Elements>
               )} 
             </div>
           )}
-          
+
           {paymentMethod === "cod" && (
             <div className="space-y-6 mt-4">
               <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-md p-3 text-sm">
-                <p>You will pay the service provider in cash after the service is completed.</p>
+                <p>
+                  You will pay the service provider in cash after the service is
+                  completed.
+                </p>
               </div>
-              
+
               <div className="flex justify-between">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={handlePreviousStep}
                   className="flex items-center gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back
                 </Button>
-                <Button 
-                  onClick={handleSubmit} 
+                <Button
+                  onClick={handleSubmit}
                   disabled={isSubmitting}
                   className="min-w-[120px]"
                 >

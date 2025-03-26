@@ -23,13 +23,13 @@ export const AuthProvider = ({ children }) => {
           setCurrentUser(user);
           
           // Optionally verify token validity with backend
-          try {
-            await getUserById(storedUser._id);
-          } catch (error) {
-            // If token is invalid, logout
-            console.error("Invalid token:", error);
-            logout();
-          }
+          // try {
+          //   await getUserById(user._id);
+          // } catch (error) {
+          //   // If token is invalid, logout
+          //   console.error("Invalid token:", error);
+          //   logout();
+          // }
         } catch (error) {
           console.error("Failed to parse stored user:", error);
           localStorage.removeItem("user");
@@ -59,10 +59,6 @@ export const AuthProvider = ({ children }) => {
         // Save user & token in localStorage
         localStorage.setItem("currentUser", JSON.stringify(user));
         localStorage.setItem("token", token);
-
-        axiosInstance.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${token}`;
 
         setCurrentUser(user);
 

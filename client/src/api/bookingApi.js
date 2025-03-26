@@ -23,7 +23,7 @@ export const createPaymentIntent = async (amount) => {
 
 export const getUserBookings = async () => {
   try {
-    const response = await api.get("/bookings");
+    const response = await api.get("/v1/bookings");
     return response.data;
   } catch (error) {
     console.error("Error fetching user bookings:", error);
@@ -40,6 +40,17 @@ export const getBookingById = async (id) => {
     throw error;
   }
 };
+
+export const getBookingByCustomerId = async (id) => {
+  try {
+    const response = await api.get(`/v1/customer/bookings`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching booking with id:`, error);
+    throw error;
+  }
+};
+
 
 export const updateBookingStatus = async (id, status) => {
   try {

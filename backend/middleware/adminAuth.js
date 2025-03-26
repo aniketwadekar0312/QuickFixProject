@@ -1,4 +1,4 @@
-module.exports = function(req, res, next) {
+const isAdmin = (req, res, next) => {
   // Check if user is admin
 
   if (req.user.role !== 'admin') {
@@ -6,3 +6,5 @@ module.exports = function(req, res, next) {
   }
   next();
 };
+
+module.exports = { isAdmin };
