@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { mockBookings, mockWorkers, mockServices } from "@/data/mockData";
 import { getBookingByCustomerId } from "../api/bookingApi";
+
 import {
   Calendar,
   ClipboardList,
@@ -20,6 +21,11 @@ import {
 const CustomerDashboard = () => {
   const { currentUser } = useAuth();
   const [bookings, setBookings] = useState([]);
+  const navigate = useNavigate();
+  // const location=bookings.map(booking =>{
+  //   console.log(booking.worker.location);
+  // });
+  
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -34,7 +40,11 @@ const CustomerDashboard = () => {
       default:
         return "outline";
     }
-  };
+};
+
+const handleBookingClick = (bookingId) => {
+  navigate(`/booking/${bookingId}`);
+};
 
   const getCustomerBookings = async () => {
     try {
@@ -154,7 +164,8 @@ const CustomerDashboard = () => {
                           {bookings.map((booking, index) => (
                             <div
                               key={booking._id || index}
-                              className="border rounded-lg p-4 hover:border-brand-200 transition-colors"
+                              className="border rounded-lg p-4 hover:border-brand-200 transition-colors cursor-pointer hover:bg-gray-50"
+                                onClick={() => handleBookingClick(booking._id)}
                             >
                               <div className="flex flex-col md:flex-row justify-between">
                                 <div>
@@ -173,7 +184,7 @@ const CustomerDashboard = () => {
                                   </div>
                                   <div className="flex items-center text-gray-600 mt-1">
                                     <MapPin className="h-4 w-4 mr-1" />
-                                    <span>{booking?.location || ""}</span>
+                                    <span className="capitalize">{booking?.worker.location || ""}</span>
                                   </div>
                                 </div>
                                 <div className="mt-4 md:mt-0 flex flex-col items-end">
@@ -238,7 +249,8 @@ const CustomerDashboard = () => {
                             .map((booking) => (
                               <div
                                 key={booking._id}
-                                className="border rounded-lg p-4 hover:border-brand-200 transition-colors"
+                                className="border rounded-lg p-4 hover:border-brand-200 transition-colors cursor-pointer hover:bg-gray-50"
+                                onClick={() => handleBookingClick(booking._id)}
                               >
                                 <div className="flex flex-col md:flex-row justify-between">
                                   <div>
@@ -258,7 +270,11 @@ const CustomerDashboard = () => {
                                         {booking?.timeSlot || ""}
                                       </span>
                                     </div>
-                                    <div className="flex items-center mt-2">
+                                    <div className="flex items-center text-gray-600 mt-1">
+                                    <MapPin className="h-4 w-4 mr-1" />
+                                    <span className="capitalize">{booking?.worker.location || ""}</span>
+                                  </div>
+                                    <div className="flex items-center">
                                       {booking?.rating && (
                                         <div className="flex items-center text-yellow-500 mr-4">
                                           {Array.from({ length: 5 }).map(

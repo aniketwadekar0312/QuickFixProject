@@ -26,6 +26,9 @@ import WorkerManageServices from "./pages/worker/WorkerManageServices";
 import WorkerAccountSettings from "./pages/worker/WorkerAccountSettings";
 import WorkerEarnings from "./pages/worker/WorkerEarnings";
 import WorkerRegister from "./pages/WorkerRegister";
+import BookingDetails from "./components/booking/BookingDetails";
+import WorkerDetails from "./pages/admin/WorkerDetails";
+import CustomerDetails from "./pages/admin/CustomerDetails";
 
 const queryClient = new QueryClient();
 
@@ -46,7 +49,10 @@ const App = () => (
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             <Route path="/worker/dashboard" element={<WorkerDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/worker/:id" element={<WorkerDetails />} />
+            <Route path="/admin/customer/:id" element={<CustomerDetails />} />
             <Route path="/about" element={<About />} />
+            <Route path="/booking/:id" element={<BookingDetails />} />
             
             <Route path="/contact" element={<Contact />} />
             <Route path="/how-it-works" element={<Layout><HowItWorks /></Layout>} />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Layout from "@/components/layout/Layout";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -35,6 +36,7 @@ import {
   ClipboardList,
   Users,
   BarChart3,
+  Eye
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -44,6 +46,7 @@ const AdminDashboard = () => {
   const [booking, setBooking] = useState([]);
   const [customer, setCustomer] = useState([]);
   const [worker, setWorker] = useState([]);
+  const navigate = useNavigate();
 
   const getDashboardStatics = async () => {
     try {
@@ -114,6 +117,7 @@ const AdminDashboard = () => {
     getBookings();
     getCustomer();
     getWorker();
+    
   }, []);
 
   const formattedDate = (date) => {
@@ -426,9 +430,12 @@ const AdminDashboard = () => {
                                 <Button
                                   variant="link"
                                   className="w-full md:w-auto"
-                                >
-                                  View Documents
-                                </Button>
+                                  onClick={() => navigate(`/admin/worker/${worker.id}`)}
+                                  >
+                                    
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Details
+                                  </Button>
                               </div>
                             </div>
                           </div>
@@ -497,7 +504,12 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>{worker?.rating.toFixed(1)}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="link" size="sm">
+                          <Button 
+                              variant="link" 
+                              size="sm"
+                              onClick={() => navigate(`/admin/worker/${worker._id}`)}
+                            >
+                              <Eye className="h-4 w-4  mt-1" />
                               View
                             </Button>
                           </TableCell>
@@ -552,7 +564,12 @@ const AdminDashboard = () => {
                               {customer?.bookings?.length || 0}
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button variant="link" size="sm">
+                            <Button 
+                                variant="link" 
+                                size="sm"
+                                onClick={() => navigate(`/admin/customer/${customer._id}`)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
                                 View
                               </Button>
                             </TableCell>

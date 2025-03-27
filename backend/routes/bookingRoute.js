@@ -9,6 +9,7 @@ const {
   updateBookingStatus,
   getBookingsByCustomerId,
   deleteBooking,
+  getBookingById,
 } = require("../controllers/BookingController");
 
 // @route   POST api/bookings
@@ -21,6 +22,10 @@ router.post("/book", verifyUser, createBooking);
 // @desc    Get all bookings for current user
 // @access  Private
 router.get("/customer/bookings", verifyUser, getBookingsByCustomerId);
+
+
+// router.get("/booking", verifyUser, getBookingsByCustomerId);
+router.get("/booking/:id",verifyUser, getBookingById);
 
 // @route   GET api/bookings/:id
 // @desc    Get booking by ID

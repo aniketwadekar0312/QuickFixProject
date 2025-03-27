@@ -206,6 +206,34 @@ const deleteBooking = async (req, res) => {
     });
   }
 };
+ // Adjust the path based on your structure
+
+// Get booking by ID
+const getBookingById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ID format
+    if (!id) {
+      return res.status(400).json({success: false, message: "Booking ID is required" });
+    }
+
+    const booking = await Booking.findById(id)
+      .populate("service") // If there's a service reference
+      .populate("worker"); // If there's a worker reference
+
+    if (!booking) {
+      return res.status(404).json({success: false, message: "Booking not found" });
+    }
+
+    return res.status(200).json({success: true, message: "booking found successfully" ,booking});
+  } catch (error) {
+    console.error("Error fetching booking:", error);
+    return res.status(500).json({success: false, message: "Server error" });
+  }
+};
+
+
 
 module.exports = {
   createPaymentIntent,
@@ -214,5 +242,6 @@ module.exports = {
   getBookingsByWorker,
   updateBookingStatus,
   deleteBooking,
-  getBookingsByCustomerId
+  getBookingsByCustomerId,
+  getBookingById
 };
