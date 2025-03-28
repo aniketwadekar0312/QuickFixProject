@@ -1,139 +1,204 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { getBookingById, updateBookingStatus } from "@/api/bookingApi";
-import { mockServices, mockWorkers } from "@/data/mockData";
-import { format } from "date-fns";
-import { 
-  ArrowLeft,
-  Calendar, 
-  MapPin, 
-  Clock, 
-  CreditCard, 
-  User, 
-  Briefcase, 
-  CheckCircle, 
-  XCircle,
-  Loader2
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  CreditCard, 
+  FileText, 
+  User as UserIcon, 
+  Phone, 
+  Mail, 
+  Star,
+  Loader2
+} from "lucide-react";
+import { getBookingById, updateBookingStatus, getBookingReviews } from "@/api/bookingApi";
 
 const BookingDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [booking, setBooking] = useState(null);
+  const { toast } = useToast();
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Fetch booking details manually
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [booking, setBooking] = useState(null);
+  const [service, setService] = useState(null);
+  const [customer, setCustomer] = useState(null);
+  const [worker, setWorker] = useState(null);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  
   useEffect(() => {
-    if (!id) return;
-
-    const fetchBooking = async () => {
+    const fetchBookingDetails = async () => {
+      if (!id) return;
+      
       try {
         setIsLoading(true);
-        const data = await getBookingById(id);
-        // console.log(data.booking);
+        let data = await getBookingById(id);
+        
         setBooking(data.booking);
-      } catch (err) {
-        setError("Failed to fetch booking details.");
+        
+        if (data.booking.service) setService(data.booking.service);
+        if (data.booking.customer) setCustomer(data.booking.customer);
+        if (data.booking.worker) setWorker(data.booking.worker);
+        
+        // Check if the booking has been reviewed
+        // In a real app, this would come from an API call
+        setHasReviewed(data.rating !== undefined);
+        
+      } catch (error) {
+        console.error("Error fetching booking details:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load booking details.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchBooking();
-  }, [id]);
-
-  const serviceDetails = booking?.service ? booking.service : null;
-  const workerDetails = booking?.worker ? booking.worker : null;
-  console.log("serviceDetails", serviceDetails, workerDetails);
+    
+    fetchBookingDetails();
+  }, [id, toast]);
   
-
-  // Handle cancel booking
-  const handleCancelBooking = async () => {
-    if (!id) return;
-
-    setIsUpdating(true);
+  // Handle booking cancellation
+  const handleCancel = async () => {
+    if (!booking || !id) return;
+    
+    setIsActionLoading(true);
+    
     try {
-      await updateBookingStatus(id, "cancelled");
+      await updateBookingStatus(id, "rejected"); // Changed from "cancelled" to "rejected"
+      
       toast({
         title: "Booking Cancelled",
-        description: "Your booking has been cancelled successfully.",
+        description: "Your booking has been successfully cancelled.",
       });
-      // Manually update state instead of refetching
-      setBooking((prev) => prev ? { ...prev, status: "cancelled" } : prev);
+      
+      // Update the local booking state
+      setBooking({
+        ...booking,
+        status: "rejected" // Changed from "cancelled" to "rejected"
+      });
+      
     } catch (error) {
+      console.error("Error cancelling booking:", error);
       toast({
         title: "Error",
-        description: "Failed to cancel booking. Please try again.",
+        description: "Failed to cancel booking.",
         variant: "destructive",
       });
     } finally {
-      setIsUpdating(false);
+      setIsActionLoading(false);
     }
   };
-
-  // Get status badge variant
-  const getStatusBadgeVariant = (status) => {
-    switch (status) {
-      case "pending":
-        return "outline";
-      case "confirmed":
-        return "secondary";
-      case "completed":
-        return "default";
-      case "cancelled":
-        return "destructive";
-      default:
-        return "outline";
+  
+  // Handle booking acceptance by worker
+  const handleAccept = async () => {
+    if (!booking || !id) return;
+    
+    setIsActionLoading(true);
+    
+    try {
+      await updateBookingStatus(id, "accepted");
+      
+      toast({
+        title: "Booking Accepted",
+        description: "You have successfully accepted this booking.",
+      });
+      
+      // Update the local booking state
+      setBooking({
+        ...booking,
+        status: "accepted"
+      });
+      
+    } catch (error) {
+      console.error("Error accepting booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to accept booking.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsActionLoading(false);
     }
   };
-
+  
+  // Handle booking rejection by worker
+  const handleReject = async () => {
+    if (!booking || !id) return;
+    
+    setIsActionLoading(true);
+    
+    try {
+      await updateBookingStatus(id, "rejected");
+      
+      toast({
+        title: "Booking Rejected",
+        description: "You have rejected this booking.",
+      });
+      
+      // Update the local booking state
+      setBooking({
+        ...booking,
+        status: "rejected"
+      });
+      
+    } catch (error) {
+      console.error("Error rejecting booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reject booking.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+  
   if (isLoading) {
     return (
       <Layout>
         <div className="bg-gray-50 py-12">
           <div className="container mx-auto px-4">
             <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2">Loading booking details...</span>
+              <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+              <span className="ml-2 text-gray-500">Loading booking details...</span>
             </div>
           </div>
         </div>
       </Layout>
     );
   }
-
-  if (error || !booking) {
+  // console.log(booking);
+  
+  if (!booking) {
     return (
       <Layout>
         <div className="bg-gray-50 py-12">
           <div className="container mx-auto px-4">
             <Button 
               variant="ghost" 
-              className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              className="mb-6 flex items-center gap-2" 
               onClick={() => navigate(-1)}
             >
               <ArrowLeft size={16} />
               Back
             </Button>
-            <Card className="max-w-2xl mx-auto">
+            <Card className="max-w-3xl mx-auto">
               <CardContent className="pt-6">
-                <div className="flex flex-col items-center justify-center py-10">
-                  <XCircle className="h-16 w-16 text-red-500 mb-4" />
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Not Found</h2>
-                  <p className="text-gray-600 mb-6">
-                    The booking you're looking for doesn't exist or you don't have permission to view it.
-                  </p>
-                  <Button onClick={() => navigate('/customer/dashboard')}>
-                    Return to Dashboard
-                  </Button>
+                <div className="text-center py-8">
+                  <h2 className="text-2xl font-bold mb-2">Booking Not Found</h2>
+                  <p className="text-gray-600 mb-4">The booking you're looking for doesn't exist.</p>
+                  <Button onClick={() => navigate('/customer/dashboard')}>Return to Dashboard</Button>
                 </div>
               </CardContent>
             </Card>
@@ -142,159 +207,239 @@ const BookingDetails = () => {
       </Layout>
     );
   }
-
+  console.log(booking);
+  
+  
   return (
     <Layout>
       <div className="bg-gray-50 py-12">
         <div className="container mx-auto px-4">
           <Button 
             variant="ghost" 
-            className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            className="mb-6 flex items-center gap-2" 
             onClick={() => navigate(-1)}
           >
             <ArrowLeft size={16} />
-            Back to Dashboard
+            Back
           </Button>
-
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8">Booking Details</h1>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Main Booking Details */}
-              <div className="md:col-span-2">
-                <Card>
-                  <CardHeader className="border-b pb-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-2xl">
-                          {serviceDetails?.name || "Service"}
-                        </CardTitle>
-                        <p className="text-gray-600 mt-1">Booking #{id?.slice(-6)}</p>
-                      </div>
-                      <Badge variant={getStatusBadgeVariant(booking.status)}>
-                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                      </Badge>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Booking details */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Booking #{booking._id
+                      // .slice(-6)
+                      }</p>
+                      <CardTitle className="text-xl md:text-2xl">
+                        {service?.name}
+                      </CardTitle>
                     </div>
-                  </CardHeader>
-
-                  <CardContent className="pt-6">
-                    <div className="space-y-6">
-                      {/* Date and Time */}
-                      <div className="flex items-start space-x-3">
-                        <Calendar className="h-5 w-5 text-gray-500 mt-0.5" />
-                        <div>
-                          <h3 className="font-medium">Date and Time</h3>
-                          <p className="text-gray-600">
-                            {booking.date ? format(new Date(booking.date), 'PPP') : 'N/A'} at {booking.timeSlot}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Location */}
-                      <div className="flex items-start space-x-3">
-                        <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
-                        <div>
-                          <h3 className="font-medium">Service Location</h3>
-                          <p className="text-gray-600">{booking.address}</p>
-                        </div>
-                      </div>
-
-                      {/* Worker Details */}
-                      <div className="flex items-start space-x-3">
-                        <User className="h-5 w-5 text-gray-500 mt-0.5" />
-                        <div>
-                          <h3 className="font-medium">Service Provider</h3>
-                          <p className="text-gray-600">
-                            {workerDetails ? workerDetails.name : "Not assigned yet"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Payment Information */}
-                      <div className="flex items-start space-x-3">
-                        <CreditCard className="h-5 w-5 text-gray-500 mt-0.5" />
-                        <div>
-                          <h3 className="font-medium">Payment Method</h3>
-                          <p className="text-gray-600">
-                            {booking.paymentMethod === 'online' ? 'Online Payment' : 'Cash on Delivery'}
-                          </p>
-                          {booking.payment && (
-                            <Badge variant={booking.payment.status === 'completed' ? 'default' : 'outline'} className="mt-2">
-                              {booking.payment.status === 'completed' ? 'Paid' : 'Payment Pending'}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Additional Notes */}
-                      {booking.additionalNotes && (
-                        <div className="flex items-start space-x-3">
-                          <Briefcase className="h-5 w-5 text-gray-500 mt-0.5" />
+                    <Badge variant={getStatusBadgeVariant(booking.status)}>
+                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-medium text-gray-500 mb-3">Booking Details</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-start">
+                          <Calendar className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
                           <div>
-                            <h3 className="font-medium">Additional Notes</h3>
-                            <p className="text-gray-600">{booking.additionalNotes}</p>
+                            <p className="font-medium">Date</p>
+                            <p className="text-gray-600">
+                              {booking.date instanceof Date 
+                                ? booking.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) 
+                                : new Date(booking.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                            </p>
                           </div>
                         </div>
-                      )}
+                        <div className="flex items-start">
+                          <Clock className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                          <div>
+                            <p className="font-medium">TimeSlot</p>
+                            <p className="text-gray-600">{booking.timeSlot}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start">
+                          <MapPin className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                          <div>
+                            <p className="font-medium">Location</p>
+                            <p className="text-gray-600">{booking.address}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </CardContent>
-
-                  {booking.status === 'pending' && (
-                    <CardFooter className="border-t pt-6">
+                    
+                    <div>
+                      <h3 className="font-medium text-gray-500 mb-3">Payment Information</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-start">
+                          <CreditCard className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                          <div>
+                            <p className="font-medium">Payment Status</p>
+                            <Badge variant={booking.payment.status === "completed" ? "default" : "outline"}>
+                              {console.log(booking.payment)}
+                              {booking.payment.status.charAt(0).toUpperCase() + booking.payment.status.slice(1)}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-start">
+                          <FileText className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                          <div>
+                            <p className="font-medium">Service Fee</p>
+                            <p className="text-gray-600">₹{booking.totalAmount}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator className="my-6" />
+                  
+                  <div>
+                    <h3 className="font-medium text-gray-500 mb-3">Service Provider</h3>
+                    <div className="flex items-start">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-4">
+                        {worker?.photoUrl ? (
+                          <img src={worker.photoUrl} alt={worker?.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <UserIcon className="h-6 w-6 text-gray-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{worker?.name}</p>
+                        <div className="flex items-center text-gray-600 mb-1">
+                          <Phone className="h-4 w-4 mr-1" />
+                          <span>{worker?.phone}</span>
+                        </div>
+                        <div className="flex items-center text-gray-600">
+                          <Mail className="h-4 w-4 mr-1" />
+                          <span>{worker?.email}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator className="my-6" />
+                  
+                  {/* Action buttons */}
+                  <div className="flex flex-wrap gap-3 justify-end">
+                    {currentUser?.role === "customer" && booking.status === "pending" && (
                       <Button 
                         variant="destructive" 
-                        onClick={handleCancelBooking}
-                        disabled={isUpdating}
-                        className="flex items-center space-x-2"
+                        onClick={handleCancel}
+                        disabled={isActionLoading}
                       >
-                        {isUpdating ? (
+                        {isActionLoading ? (
                           <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Cancelling...</span>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Cancelling...
                           </>
                         ) : (
-                          <>
-                            <XCircle className="h-4 w-4" />
-                            <span>Cancel Booking</span>
-                          </>
+                          "Cancel Booking"
                         )}
                       </Button>
-                    </CardFooter>
-                  )}
-                </Card>
-              </div>
-
-              {/* Order Summary */}
-              <div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Payment Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                    )}
+                    
+                    {currentUser?.role === "worker" && booking.status === "pending" && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          onClick={handleReject}
+                          disabled={isActionLoading}
+                        >
+                          {isActionLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Rejecting...
+                            </>
+                          ) : (
+                            "Reject"
+                          )}
+                        </Button>
+                        <Button
+                          onClick={handleAccept}
+                          disabled={isActionLoading}
+                        >
+                          {isActionLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Accepting...
+                            </>
+                          ) : (
+                            "Accept"
+                          )}
+                        </Button>
+                      </>
+                    )}
+                    
+                    {currentUser?.role === "customer" && booking.status === "completed" && !hasReviewed && (
+                      <Button asChild>
+                        <Link to={`/booking/${booking._id}/review`}>
+                          <Star className="h-4 w-4 mr-2" />
+                          Leave a Review
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Service Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {service && (
                     <div className="space-y-4">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Service Fee</span>
-                        <span>₹{serviceDetails?.price || 0}</span>
+                      <div className="aspect-video rounded-md bg-gray-100 overflow-hidden">
+                        <img 
+                          src={service.imageUrl || "/placeholder.svg"} 
+                          alt={service.name} 
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Platform Fee</span>
-                        <span>₹49</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between font-bold text-lg">
-                        <span>Total</span>
-                        <span>₹{booking.totalAmount}</span>
+                      <h3 className="font-medium text-lg">{service.name}</h3>
+                      <p className="text-gray-600 text-sm">{service.description}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Service Fee</span>
+                        <span className="font-medium">₹{booking.totalAmount}</span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
       </div>
     </Layout>
   );
+};
+
+// Helper function to determine badge variant based on status
+const getStatusBadgeVariant = (status) => {
+  switch (status) {
+    case "pending":
+      return "outline";
+    case "accepted":
+      return "secondary";  
+    case "completed":
+      return "default";
+    case "rejected":
+    case "cancelled":
+      return "destructive";
+    default:
+      return "outline";
+  }
 };
 
 export default BookingDetails;

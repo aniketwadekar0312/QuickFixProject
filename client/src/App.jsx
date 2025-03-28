@@ -29,6 +29,8 @@ import WorkerRegister from "./pages/WorkerRegister";
 import BookingDetails from "./components/booking/BookingDetails";
 import WorkerDetails from "./pages/admin/WorkerDetails";
 import CustomerDetails from "./pages/admin/CustomerDetails";
+import SubmitReview from "./pages/SubmitReview";
+import WorkerReviews from "./pages/worker/WorkerReview";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,7 @@ const App = () => (
             <Route path="/services" element={<Services />} />
             <Route path="/workers" element={<Workers />} />
             <Route path="/workers/:id" element={<WorkerProfile />} />
+            <Route path="/workers/:id/reviews" element={<WorkerReviews />} />
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             <Route path="/worker/dashboard" element={<WorkerDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -53,7 +56,7 @@ const App = () => (
             <Route path="/admin/customer/:id" element={<CustomerDetails />} />
             <Route path="/about" element={<About />} />
             <Route path="/booking/:id" element={<BookingDetails />} />
-            
+            <Route path="/booking/:id/review" element={<SubmitReview />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/how-it-works" element={<Layout><HowItWorks /></Layout>} />
             <Route path="/book-service/:id?" element={<BookService />} />

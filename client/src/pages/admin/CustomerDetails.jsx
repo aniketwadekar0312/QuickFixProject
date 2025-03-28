@@ -25,8 +25,6 @@ const CustomerDetails = () => {
     const [isUpdating, setIsUpdating] = useState(false);
     const [showAll, setShowAll] = useState(false);
     
-  
-    
     const getCustomer = async () => {
         try {
           const { status, users } = await getCustomers();

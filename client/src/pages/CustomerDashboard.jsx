@@ -332,6 +332,7 @@ const handleBookingClick = (bookingId) => {
                       <CardTitle>My Reviews</CardTitle>
                     </CardHeader>
                     <CardContent>
+                      {console.log(bookings.filter((b) => b).length > 0)}
                       {bookings.filter((b) => b.rating).length > 0 ? (
                         <div className="space-y-4">
                           {bookings

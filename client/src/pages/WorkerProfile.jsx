@@ -23,6 +23,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Star, MapPin, Phone, Mail, Clock, Check } from "lucide-react";
 import { getUsers } from "../api/authServices";
 import { getService } from "../api/servicesApi";
+const mockReviewsCount = {
+  "worker1": 3,
+  "worker2": 5,
+  "worker3": 2,
+  "worker4": 8,
+  "worker5": 1
+};
+
 
 const WorkerProfile = () => {
   const { id } = useParams();
@@ -34,6 +42,7 @@ const WorkerProfile = () => {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [services, setServices] = useState([]);
   const [workers, setWorkers] = useState([]);
+  const reviewCount = id && mockReviewsCount[id] ? mockReviewsCount[id] : 0;
 
   const fetchServices = async () => {
     try {
@@ -153,6 +162,12 @@ const WorkerProfile = () => {
                         <span className="font-medium">
                           {worker.rating.toFixed(1)}
                         </span>
+                        <Link 
+                          to={`/workers/${id}/reviews`} 
+                          className="ml-2 text-sm text-blue-600 hover:underline"
+                        >
+                          ({reviewCount} reviews)
+                        </Link>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <MapPin className="h-5 w-5 mr-1" />
@@ -389,109 +404,82 @@ const WorkerProfile = () => {
             <TabsContent value="reviews" className="mt-6">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-4">
-                    Customer Reviews
-                  </h3>
-                  {/* Placeholder reviews */}
-                  <div className="space-y-6">
-                    <div className="border-b pb-4">
-                      <div className="flex items-start mb-2">
-                        <img
-                          src="https://i.pravatar.cc/150?img=32"
-                          alt="Customer"
-                          className="w-10 h-10 rounded-full mr-3"
-                        />
-                        <div>
-                          <h4 className="font-medium">Rahul Mehta</h4>
-                          <div className="flex items-center">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < 5
-                                    ? "fill-yellow-400 stroke-yellow-400"
-                                    : "stroke-gray-300"
-                                }`}
-                              />
-                            ))}
-                            <span className="ml-2 text-sm text-gray-500">
-                              1 month ago
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-700">
-                        Excellent service! Very professional and completed the
-                        job quickly. Would definitely hire again for future
-                        needs.
-                      </p>
-                    </div>
-
-                    <div className="border-b pb-4">
-                      <div className="flex items-start mb-2">
-                        <img
-                          src="https://i.pravatar.cc/150?img=45"
-                          alt="Customer"
-                          className="w-10 h-10 rounded-full mr-3"
-                        />
-                        <div>
-                          <h4 className="font-medium">Priya Singh</h4>
-                          <div className="flex items-center">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < 4
-                                    ? "fill-yellow-400 stroke-yellow-400"
-                                    : "stroke-gray-300"
-                                }`}
-                              />
-                            ))}
-                            <span className="ml-2 text-sm text-gray-500">
-                              2 months ago
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-700">
-                        Good work overall. Arrived on time and fixed the issue,
-                        though the price was a bit higher than expected.
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="flex items-start mb-2">
-                        <img
-                          src="https://i.pravatar.cc/150?img=68"
-                          alt="Customer"
-                          className="w-10 h-10 rounded-full mr-3"
-                        />
-                        <div>
-                          <h4 className="font-medium">Anil Patel</h4>
-                          <div className="flex items-center">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < 5
-                                    ? "fill-yellow-400 stroke-yellow-400"
-                                    : "stroke-gray-300"
-                                }`}
-                              />
-                            ))}
-                            <span className="ml-2 text-sm text-gray-500">
-                              3 months ago
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-700">
-                        Top notch service! Very knowledgeable and explained
-                        everything clearly. The work was done perfectly and they
-                        cleaned up after themselves. Highly recommend!
-                      </p>
-                    </div>
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-semibold">Customer Reviews</h3>
+                    <Button asChild variant="outline">
+                      <Link to={`/workers/${id}/reviews`}>
+                        See All Reviews
+                      </Link>
+                    </Button>
                   </div>
+                  
+                  {/* Preview of reviews */}
+                  {reviewCount > 0 ? (
+                    <div className="space-y-6">
+                      <div className="border-b pb-4">
+                        <div className="flex items-start mb-2">
+                          <img
+                            src="https://i.pravatar.cc/150?img=32"
+                            alt="Customer"
+                            className="w-10 h-10 rounded-full mr-3"
+                          />
+                          <div>
+                            <h4 className="font-medium">Rahul Mehta</h4>
+                            <div className="flex items-center">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < 5
+                                      ? "fill-yellow-400 stroke-yellow-400"
+                                      : "stroke-gray-300"
+                                  }`}
+                                />
+                              ))}
+                              <span className="ml-2 text-sm text-gray-500">1 month ago</span>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-gray-700">
+                          Excellent service! Very professional and completed the job quickly.
+                          Would definitely hire again for future needs.
+                        </p>
+                      </div>
+                      
+                      <div className="border-b pb-4">
+                        <div className="flex items-start mb-2">
+                          <img
+                            src="https://i.pravatar.cc/150?img=45"
+                            alt="Customer"
+                            className="w-10 h-10 rounded-full mr-3"
+                          />
+                          <div>
+                            <h4 className="font-medium">Priya Singh</h4>
+                            <div className="flex items-center">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < 4
+                                      ? "fill-yellow-400 stroke-yellow-400"
+                                      : "stroke-gray-300"
+                                  }`}
+                                />
+                              ))}
+                              <span className="ml-2 text-sm text-gray-500">2 months ago</span>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-gray-700">
+                          Good work overall. Arrived on time and fixed the issue, though the price was a bit higher than expected.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600">No reviews yet.</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

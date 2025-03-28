@@ -430,7 +430,7 @@ const AdminDashboard = () => {
                                 <Button
                                   variant="link"
                                   className="w-full md:w-auto"
-                                  onClick={() => navigate(`/admin/worker/${worker.id}`)}
+                                  onClick={() => navigate(`/admin/worker/${worker._id}`)}
                                   >
                                     
                                     <Eye className="h-4 w-4 mr-2" />

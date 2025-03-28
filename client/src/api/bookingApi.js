@@ -62,6 +62,36 @@ export const updateBookingStatus = async (id, status) => {
   }
 };
 
+export const getBookingReviews = async (bookingId) => {
+  try {
+    const response = await api.get(`/v1/reviews/booking/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching reviews for booking ${bookingId}:`, error);
+    throw error;
+  }
+};
+
+export const submitReview = async (reviewData) => {
+  try {
+    const response = await api.post('/v1/reviews', reviewData);
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting review:', error);
+    throw error;
+  }
+};
+
+export const getUserReviews = async () => {
+  try {
+    const response = await api.get('/reviews/customer');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user reviews:', error);
+    throw error;
+  }
+};
+
 // Get saved payment methods (in a real app, this would call an API)
 export const getSavedPaymentMethods = async () => {
   // This is a mock implementation
