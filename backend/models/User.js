@@ -36,6 +36,11 @@ const UserSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    stripeCustomerId: {
+      type: String,
+      unique: true,
+      sparse: true
+    }
   },
   { timestamps: true }
 );

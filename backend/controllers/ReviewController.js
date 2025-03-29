@@ -122,3 +122,75 @@ exports.getCustomerReviews = async (req, res) => {
     res.status(500).json({ status: false, message: 'Server error' });
   }
 };
+
+exports.updateReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const reviewId = req.params.id;
+
+    // Find the review
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ status: false, message: 'Review not found' });
+    }
+
+    // Check if the user owns this review
+    if (review.customer.toString() !== req.user.id) {
+      return res.status(403).json({ status: false, message: 'Not authorized to update this review' });
+    }
+
+    // Update the review
+    review.rating = rating;
+    review.comment = comment;
+    await review.save();
+
+    // Populate the updated review
+    const updatedReview = await Review.findById(reviewId)
+      .populate('customer', 'name')
+      .populate('worker', 'name')
+      .populate('booking', 'service date');
+
+    res.status(200).json({ 
+      status: true, 
+      message: 'Review updated successfully', 
+      data: updatedReview 
+    });
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ status: false, message: 'Review not found' });
+    }
+    res.status(500).json({ status: false, message: 'Server error' });
+  }
+};
+
+exports.deleteReview = async (req, res) => {
+  try {
+    const reviewId = req.params.id;
+
+    // Find the review
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ status: false, message: 'Review not found' });
+    }
+
+    // Check if the user owns this review
+    if (review.customer.toString() !== req.user.id) {
+      return res.status(403).json({ status: false, message: 'Not authorized to delete this review' });
+    }
+
+    // Delete the review using findByIdAndDelete
+    await Review.findByIdAndDelete(reviewId);
+
+    res.status(200).json({ 
+      status: true, 
+      message: 'Review deleted successfully' 
+    });
+  } catch (err) {
+    console.error('Delete review error:', err);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ status: false, message: 'Review not found' });
+    }
+    res.status(500).json({ status: false, message: 'Server error' });
+  }
+};

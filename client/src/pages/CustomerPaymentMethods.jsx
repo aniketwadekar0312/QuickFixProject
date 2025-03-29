@@ -1,215 +1,200 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Layout from "@/components/layout/Layout";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Trash2, PlusCircle, Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PlusCircle, Trash2, CreditCard } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getPaymentMethods, deletePaymentMethod, setDefaultPaymentMethod, createSetupIntent } from "@/api/paymentApi";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import AddCardForm from "@/components/payment/AddCardForm";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const CustomerPaymentMethods = () => {
-  const { toast } = useToast();
   const [showAddCard, setShowAddCard] = useState(false);
-  const navigate = useNavigate();
-  // Mock saved payment methods
-  const [paymentMethods, setPaymentMethods] = useState([
-    {
-      id: "pm1",
-      cardNumber: "**** **** **** 4242",
-      cardType: "Visa",
-      expiryDate: "12/25",
-      isDefault: true,
-    },
-    {
-      id: "pm2",
-      cardNumber: "**** **** **** 5555",
-      cardType: "Mastercard",
-      expiryDate: "08/24",
-      isDefault: false,
-    },
-  ]);
+  const [clientSecret, setClientSecret] = useState(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const handleDeleteCard = (id) => {
-    setPaymentMethods(paymentMethods.filter((method) => method.id !== id));
+  // Fetch payment methods
+  const { data: response, isLoading } = useQuery({
+    queryKey: ['paymentMethods'],
+    queryFn: getPaymentMethods,
+  });
+
+  // Extract payment methods from response
+  const paymentMethods = response?.data || [];
+
+  // Delete payment method mutation
+  const deleteMutation = useMutation({
+    mutationFn: deletePaymentMethod,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['paymentMethods']);
+      toast({
+        title: "Success",
+        description: "Payment method deleted successfully"
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to delete payment method"
+      });
+    }
+  });
+
+  // Set default payment method mutation
+  const setDefaultMutation = useMutation({
+    mutationFn: setDefaultPaymentMethod,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['paymentMethods']);
+      toast({
+        title: "Success",
+        description: "Default payment method updated successfully"
+      });
+    },
+    onError: (error) => {
     toast({
-      title: "Payment method removed",
-      description: "The payment method has been successfully removed.",
-    });
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update default payment method"
+      });
+    }
+  });
+
+  const handleDeleteCard = async (methodId) => {
+    try {
+      await deleteMutation.mutateAsync(methodId);
+    } catch (error) {
+      console.error('Error deleting payment method:', error);
+    }
   };
 
-  const handleSetDefault = (id) => {
-    setPaymentMethods(
-      paymentMethods.map((method) => ({
-        ...method,
-        isDefault: method.id === id,
-      }))
+  const handleSetDefault = async (methodId) => {
+    try {
+      await setDefaultMutation.mutateAsync(methodId);
+    } catch (error) {
+      console.error('Error setting default payment method:', error);
+    }
+  };
+
+  const handleAddCard = async () => {
+    try {
+      const data = await createSetupIntent();
+      setClientSecret(data.clientSecret);
+      setShowAddCard(true);
+    } catch (error) {
+    toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to initialize card addition"
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
     );
-    toast({
-      title: "Default payment method updated",
-      description: "Your default payment method has been updated.",
-    });
-  };
+  }
 
-  const handleAddCard = (e) => {
-    e.preventDefault();
-    const newCard = {
-      id: `pm${paymentMethods.length + 1}`,
-      cardNumber: "**** **** **** 1234",
-      cardType: "Visa",
-      expiryDate: "01/28",
-      isDefault: false,
-    };
-    setPaymentMethods([...paymentMethods, newCard]);
-    setShowAddCard(false);
-    toast({
-      title: "Payment method added",
-      description: "Your new payment method has been added successfully.",
-    });
-  };
   return (
     <Layout>
-      <div className="bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
-          <Button
-            variant="ghost"
-            className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft size={16} />
-            Back
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Payment Methods</h1>
+          <Button onClick={handleAddCard} className="flex items-center gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Add New Card
           </Button>
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold">Payment Methods</h1>
-            <p className="text-gray-600">
-              Manage your payment methods for booking services
-            </p>
           </div>
 
-          <div className="grid gap-6">
+        {showAddCard ? (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Add New Card</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {clientSecret && (
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <AddCardForm
+                    clientSecret={clientSecret}
+                    onSuccess={() => {
+                      setShowAddCard(false);
+                      setClientSecret(null);
+                      queryClient.invalidateQueries(['paymentMethods']);
+                    }}
+                  />
+                </Elements>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
+
             <Card>
               <CardHeader>
                 <CardTitle>Saved Payment Methods</CardTitle>
-                <CardDescription>
-                  Your saved payment methods for booking services
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+            {paymentMethods.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No payment methods saved yet
+              </div>
+            ) : (
+              <RadioGroup className="space-y-4">
                   {paymentMethods.map((method) => (
                     <div
-                      key={method.id}
-                      className={`flex items-center justify-between p-4 border rounded-lg ${
-                        method.isDefault
-                          ? "border-primary bg-primary/5"
-                          : "border-gray-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <CreditCard className="h-8 w-8 text-primary" />
+                    key={method._id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <RadioGroupItem
+                        value={method._id}
+                        id={method._id}
+                        checked={method.isDefault}
+                        onChange={() => handleSetDefault(method._id)}
+                      />
                         <div>
-                          <div className="font-medium">
-                            {method.cardType} {method.cardNumber}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Expires {method.expiryDate}
-                          </div>
-                          {method.isDefault && (
-                            <div className="text-xs font-medium text-primary mt-1 flex items-center">
-                              <Check className="h-3 w-3 mr-1" />
-                              Default payment method
-                            </div>
-                          )}
-                        </div>
+                        <Label htmlFor={method._id} className="flex items-center gap-2">
+                          <CreditCard className="h-5 w-5" />
+                          {method.brand} •••• {method.last4}
+                        </Label>
+                        <p className="text-sm text-gray-500">
+                          Expires {method.exp_month}/{method.exp_year}
+                        </p>
                       </div>
-                      <div className="flex gap-2">
-                        {!method.isDefault && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSetDefault(method.id)}
-                          >
-                            Set as Default
-                          </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {method.isDefault && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                          Default
+                        </span>
                         )}
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteCard(method.id)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => handleDeleteCard(method._id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ))}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddCard(!showAddCard)}
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Payment Method
-                </Button>
-              </CardFooter>
-            </Card>
-
-            {showAddCard && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Add New Payment Method</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleAddCard}>
-                    <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="cardNumber">Card Number</Label>
-                        <Input
-                          id="cardNumber"
-                          placeholder="1234 5678 9012 3456"
-                          required
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="expiry">Expiry Date</Label>
-                          <Input id="expiry" placeholder="MM/YY" required />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="cvc">CVC</Label>
-                          <Input id="cvc" placeholder="123" required />
-                        </div>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="name">Name on Card</Label>
-                        <Input id="name" placeholder="John Doe" required />
-                      </div>
-                    </div>
-                    <div className="flex justify-end mt-6 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowAddCard(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit">Save Payment Method</Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
+              </RadioGroup>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

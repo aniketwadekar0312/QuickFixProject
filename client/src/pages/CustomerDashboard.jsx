@@ -7,23 +7,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBookingByCustomerId } from "../api/bookingApi";
-
-import {
-  Calendar,
-  ClipboardList,
-  Star,
-  MapPin,
-  Clock,
-  CreditCard,
-} from "lucide-react";
+import { getCustomerReviews, updateReview, deleteReview } from "@/api/reviewApi";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Star, ClipboardList, MapPin, Clock, CreditCard, Trash2, Edit2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const CustomerDashboard = () => {
   const { currentUser } = useAuth();
   const [bookings, setBookings] = useState([]);
   const navigate = useNavigate();
-  // const location=bookings.map(booking =>{
-  //   console.log(booking.worker.location);
-  // });
+  const [editingReview, setEditingReview] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [reviewToDelete, setReviewToDelete] = useState(null);
   
 
   const getStatusBadgeVariant = (status) => {
@@ -64,13 +64,60 @@ const handleBookingClick = (bookingId) => {
   }, []);
   const formattedDate = (date) => {
     const dateString = new Date(date);
-    const formattedDate = dateString.toLocaleDateString("en-GB", {
+    const formattedDate = dateString.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     });
     return formattedDate;
   };
+
+
+
+  // Fetch reviews using React Query
+  const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
+    queryKey: ['reviews'],
+    queryFn: getCustomerReviews
+  });
+
+  // Update review mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => updateReview(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['reviews']);
+      setIsDialogOpen(false);
+      setEditingReview(null);
+      toast.success('Review updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update review');
+    }
+  });
+
+  // Delete review mutation
+  const deleteMutation = useMutation({
+    mutationFn: deleteReview,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['reviews']);
+      toast.success('Review deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete review');
+    }
+  });
+
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    updateMutation.mutate({
+      id: editingReview._id,
+      data: {
+        rating: parseInt(formData.get('rating')),
+        comment: formData.get('comment')
+      }
+    });
+  };
+
   return (
     <Layout>
       <div className="bg-gray-50 py-12">
@@ -112,7 +159,7 @@ const handleBookingClick = (bookingId) => {
                     className="w-full justify-start"
                   >
                     <Link to="/services">
-                      <Calendar className="h-4 w-4 mr-2" />
+                      <Clock className="h-4 w-4 mr-2" />
                       Book a Service
                     </Link>
                   </Button>
@@ -174,7 +221,7 @@ const handleBookingClick = (bookingId) => {
                                     Service Provider: {booking?.worker?.name}
                                   </p>
                                   <div className="flex items-center text-gray-600 mt-2">
-                                    <Calendar className="h-4 w-4 mr-1" />
+                                    <Clock className="h-4 w-4 mr-1" />
                                     <span>
                                       {formattedDate(booking?.date)} at{" "}
                                       {booking?.timeSlot}
@@ -262,7 +309,7 @@ const handleBookingClick = (bookingId) => {
                                         "Unknown Worker"}
                                     </p>
                                     <div className="flex items-center text-gray-600 mt-2">
-                                      <Calendar className="h-4 w-4 mr-1" />
+                                      <Clock className="h-4 w-4 mr-1" />
                                       <span>
                                         {formattedDate(booking?.date) || ""} at{" "}
                                         {booking?.timeSlot || ""}
@@ -330,55 +377,124 @@ const handleBookingClick = (bookingId) => {
                       <CardTitle>My Reviews</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {console.log(bookings.filter((b) => b).length > 0)}
-                      {bookings.filter((b) => b.rating).length > 0 ? (
+                      {reviewsLoading ? (
+                        <div className="text-center py-8">Loading...</div>
+                      ) : reviewsData?.reviews?.length > 0 ? (
                         <div className="space-y-4">
-                          {bookings
-                            .filter((b) => b?.rating)
-                            .map((booking) => (
-                              <div
-                                key={booking._id}
-                                className="border rounded-lg p-4 hover:border-brand-200 transition-colors"
-                              >
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <h3 className="font-semibold">
-                                      {findServiceName(booking?.service)}
-                                    </h3>
-                                    <p className="text-gray-600">
-                                      Service Provider:{" "}
-                                      {findWorkerName(booking?.worker)}
-                                    </p>
-                                    <div className="flex items-center mt-2">
-                                      {booking?.rating && (
-                                        <div className="flex items-center text-yellow-500">
-                                          {Array.from({ length: 5 }).map(
-                                            (_, i) => (
-                                              <Star
-                                                key={i}
-                                                className={`h-4 w-4 ${
-                                                  i < (booking?.rating || 0)
-                                                    ? "fill-yellow-400 stroke-yellow-400"
-                                                    : "stroke-gray-300"
-                                                }`}
-                                              />
-                                            )
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                    {booking?.feedback && (
-                                      <p className="text-gray-700 mt-2">
-                                        "{booking?.feedback}"
+                          {reviewsData.reviews.map((review) => (
+                            <div
+                              key={review._id}
+                              className="border rounded-lg p-4 hover:border-brand-200 transition-colors"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <h3 className="font-semibold">
+                                        {review.booking.service.name}
+                                      </h3>
+                                      <p className="text-gray-600">
+                                        Service Provider: {review.worker.name}
                                       </p>
-                                    )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Dialog open={isDialogOpen && editingReview?._id === review._id} onOpenChange={setIsDialogOpen}>
+                                        <DialogTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => {
+                                              setEditingReview(review);
+                                              setIsDialogOpen(true);
+                                            }}
+                                          >
+                                            <Edit2 className="h-4 w-4" />
+                                          </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                          <DialogHeader>
+                                            <DialogTitle>Edit Review</DialogTitle>
+                                          </DialogHeader>
+                                          <form onSubmit={handleUpdate} className="space-y-4">
+                                            <div>
+                                              <label className="text-sm font-medium">Rating</label>
+                                              <Input
+                                                type="number"
+                                                name="rating"
+                                                defaultValue={review.rating}
+                                                min="1"
+                                                max="5"
+                                                required
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="text-sm font-medium">Comment</label>
+                                              <Textarea
+                                                name="comment"
+                                                defaultValue={review.comment}
+                                                required
+                                              />
+                                            </div>
+                                            <Button type="submit" className="w-full">
+                                              Update Review
+                                            </Button>
+                                          </form>
+                                        </DialogContent>
+                                      </Dialog>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setReviewToDelete(review)}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete Review</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Are you sure you want to delete this review? This action cannot be undone.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => {
+                                                deleteMutation.mutate(review._id);
+                                                setReviewToDelete(null);
+                                              }}
+                                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                            >
+                                              Delete
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </div>
                                   </div>
-                                  <div className="text-sm text-gray-500">
-                                    {formattedDate(booking?.date)}
+                                  <div className="flex items-center mt-2">
+                                    <div className="flex items-center text-yellow-500">
+                                      {Array.from({ length: 5 }).map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`h-4 w-4 ${
+                                            i < review.rating
+                                              ? "fill-yellow-400 stroke-yellow-400"
+                                              : "stroke-gray-300"
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
                                   </div>
+                                  <p className="text-gray-700 mt-2">
+                                    "{review.comment}"
+                                  </p>
                                 </div>
                               </div>
-                            ))}
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="text-center py-8">

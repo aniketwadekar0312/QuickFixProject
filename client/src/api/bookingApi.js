@@ -61,13 +61,21 @@ export const getBookingById = async (id) => {
   }
 };
 
-export const getBookingByCustomerId = async (id) => {
+export const getBookingByCustomerId = async () => {
   try {
-    const response = await api.get(`/v1/customer/bookings`);
+    const token = localStorage.getItem("token"); // Retrieve token from storage
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const response = await api.get(`/v1/customer/bookings`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
     return response.data;
   } catch (error) {
-    console.error(`Error fetching booking with id:`, error);
-    throw error;
+    console.error("Error fetching bookings:", error?.response?.data || error);
+    // throw error;
   }
 };
 

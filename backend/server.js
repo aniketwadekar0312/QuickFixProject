@@ -10,6 +10,9 @@ const servicesRouter = require("./routes/ServicesRoute.js");
 const bookingRouter = require("../backend/routes/bookingRoute.js");
 const adminDashboardRouter = require("../backend/routes/admindashboardRoute.js");
 const reviewRouter = require("./routes/reviewRoute.js");
+const paymentMethodRouter = require("./routes/PaymentMethodRouter.js");
+const workerRoutes = require("./routes/workerRoutes");
+
 // Load environment variables
 dotenv.config();
 
@@ -31,11 +34,14 @@ app.use(cookieParser());
 
 // API Routes
 app.use('/api/v1', userRouter);
+app.use('/api/v1/worker', workerRoutes);
 app.use('/api/v1', categoryRouter);
 app.use('/api/v1', servicesRouter);
 app.use('/api/v1', bookingRouter);
+
 app.use('/api/v1', adminDashboardRouter);
 app.use('/api/v1/', reviewRouter);
+app.use('/api/v1/payment-methods', paymentMethodRouter);
 
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);
