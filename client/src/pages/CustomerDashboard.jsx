@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockBookings, mockWorkers, mockServices } from "@/data/mockData";
 import { getBookingByCustomerId } from "../api/bookingApi";
 
 import {
@@ -72,7 +71,6 @@ const handleBookingClick = (bookingId) => {
     });
     return formattedDate;
   };
-
   return (
     <Layout>
       <div className="bg-gray-50 py-12">

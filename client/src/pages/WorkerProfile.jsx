@@ -70,7 +70,6 @@ const WorkerProfile = () => {
     fetchUsers();
   }, []);
   const worker = workers.find((w) => w._id === id);
-  console.log(worker);
 
   if (!worker) {
     return (

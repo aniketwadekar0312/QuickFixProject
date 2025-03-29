@@ -7,8 +7,11 @@ import { CreditCard, Wallet, PlusCircle, ArrowLeft } from "lucide-react";
 import {
   useStripe,
   useElements,
-  CardElement
+  CardElement,
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout
 } from "@stripe/react-stripe-js";
+
 
 // The Stripe form component
 const StripeCardForm = ({
@@ -137,6 +140,7 @@ const PaymentSection = ({
   handlePreviousStep,
   addNewPaymentMethod,
   clientSecret,
+  stripe
 }) => {
   const [useNewCard, setUseNewCard] = useState(false);
 

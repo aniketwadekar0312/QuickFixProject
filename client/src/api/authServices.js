@@ -15,7 +15,8 @@ export const getUsers = async () => {
 };
 
 export const getUserById = async (id) => {
-  return await axiosInstance.get(`/v1/user/${id}`).data; // ✅ Return only .data
+ const response =  await axiosInstance.get(`/v1/user/${id}`); // ✅ Return only .data
+  return response.data
 };
 
 export const updateUserProfile = async (id,data) => {
@@ -29,6 +30,5 @@ export const getUserProfile = async () => {
 
 // Logout (Optional, can be handled in AuthContext)
 export const logoutUser = async () => {
-  localStorage.removeItem("currentUser");
-  localStorage.removeItem("token");
+  return await axiosInstance.post("/v1/logout")
 };

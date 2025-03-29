@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -31,15 +32,25 @@ import WorkerDetails from "./pages/admin/WorkerDetails";
 import CustomerDetails from "./pages/admin/CustomerDetails";
 import SubmitReview from "./pages/SubmitReview";
 import WorkerReviews from "./pages/worker/WorkerReview";
+import BookingConfirmation from "./components/booking/BookingConfirmation ";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+const App = () => {
+  const navigate = useNavigate();
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  
+  useEffect(() => {
+    if (!storedUser) {
+      navigate("/login");
+    }
+  }, [storedUser, navigate]);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/register" element={<Register />} />
@@ -57,21 +68,37 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/booking/:id" element={<BookingDetails />} />
             <Route path="/booking/:id/review" element={<SubmitReview />} />
+
             <Route path="/contact" element={<Contact />} />
-            <Route path="/how-it-works" element={<Layout><HowItWorks /></Layout>} />
+            <Route
+              path="/how-it-works"
+              element={
+                <Layout>
+                  <HowItWorks />
+                </Layout>
+              }
+            />
             <Route path="/book-service/:id?" element={<BookService />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/customer/payment-methods" element={<CustomerPaymentMethods />} />
+            <Route
+              path="/customer/payment-methods"
+              element={<CustomerPaymentMethods />}
+            />
             <Route path="/worker/services" element={<WorkerManageServices />} />
-            <Route path="/worker/settings" element={<WorkerAccountSettings />} />
+            <Route
+              path="/worker/settings"
+              element={<WorkerAccountSettings />}
+            />
             <Route path="/worker/earnings" element={<WorkerEarnings />} />
+            <Route path="/return" element={<BookingConfirmation />} />
             {/* Catch-all route for undefined paths */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

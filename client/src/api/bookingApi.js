@@ -1,9 +1,29 @@
 import api from "./api";
 
-// Bookings API functions
-export const createBooking = async ( bookingData ) => {
+export const intiatePayment = async (data) => {
   try {
-    const response = await api.post("/v1/book", bookingData);
+    const response = await api.post(`/v1/create-checkout-session`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating booking:", error);
+    throw error;
+  }
+};
+
+export const verifyPayment = async (sessionId) => {
+  try {
+    const response = await api.post(`/v1/verify-payment`, sessionId);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating booking:", error);
+    throw error;
+  }
+}
+
+// Bookings API functions
+export const createBooking = async ( bookingData, sessionId ) => {
+  try {
+    const response = await api.post(`/v1/book/`, bookingData);
     return response.data;
   } catch (error) {
     console.error("Error creating booking:", error);

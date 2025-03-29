@@ -92,12 +92,19 @@ const login = async (req, res) => {
       expiresIn: "10d",
     });
 
+
+     // Set token in HTTP-only cookie
+     res.cookie("token", token, {
+      httpOnly: true, // Prevents JavaScript access for security
+      secure: process.env.NODE_ENV === "production", // Ensures secure cookie in HTTPS
+      sameSite: "Strict", // Helps against CSRF attacks
+    });
+
     return res
       .status(200)
       .json({
         status: true,
         message: `${role} login successfully.`,
-        token,
         user,
       });
   } catch (error) {
@@ -105,6 +112,21 @@ const login = async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 };
+
+const Logout = async (req, res) => {
+  try {
+    // Clear the JWT token from the cookies
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Secure in production
+      sameSite: "strict",
+    });
+    return res.status(200).json({ status: true, message: "Logged out" });
+  } catch (error) {
+    console.log("Getting error in logout", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+}
 
 const getUsers = async (req, res) => {
   try {
@@ -121,7 +143,8 @@ const getUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     // Fetch only workers
-    const user = await User.findById(req.param.id);
+    const userId = req.params.id;
+    const user = await User.findOne({_id: userId});
     return res.status(200).json({status: true, message: "User fetched successfully.",user});
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -180,4 +203,4 @@ const updateUser = async (req, res) => {
 };
 
 
-module.exports = { register, login, getUsers, updateUser, getUserById };
+module.exports = { register, login, Logout, getUsers, updateUser, getUserById };

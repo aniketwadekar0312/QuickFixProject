@@ -4,19 +4,21 @@ const User = require("../models/User.js");
 const verifyUser = async(req, res, next) => {
   try {
     // Check if Authorization header exists
-    if (!req.headers.authorization) {
-      return res.status(401).json({ msg: "No token, authorization denied" });
-    }
+    // if (!req.headers.authorization) {
+    //   return res.status(401).json({ msg: "No token, authorization denied" });
+    // }
 
-    const authHeader = req.headers.authorization;
+    // const authHeader = req.headers.authorization;
 
-    // Ensure the format is "Bearer TOKEN"
-    if (!authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ msg: "Invalid token format" });
-    }
+    // // Ensure the format is "Bearer TOKEN"
+    // if (!authHeader.startsWith("Bearer ")) {
+    //   return res.status(401).json({ msg: "Invalid token format" });
+    // }
 
-    // Extract token after "Bearer "
-    const token = authHeader.split(" ")[1];
+    // // Extract token after "Bearer "
+    // const token = authHeader.split(" ")[1];
+
+    const token = req.cookies.token;
 
     if (!token) {
       return res.status(401).json({ msg: "Token not found, authorization denied" });

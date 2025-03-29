@@ -3,20 +3,23 @@ const router = express.Router();
 const { verifyUser } = require("../middleware/auth");
 const {
   createBooking,
-  createPaymentIntent,
   getBookingsByCustomer,
   getBookingsByWorker,
   updateBookingStatus,
   getBookingsByCustomerId,
   deleteBooking,
   getBookingById,
+  createCheckoutSession, sessionStatus
 } = require("../controllers/BookingController");
 
 // @route   POST api/bookings
 // @desc    Create a booking
 // @access  Private
-router.post("/payment-intent", verifyUser, createPaymentIntent);
+// router.post("/payment-intent", verifyUser, createPaymentIntent);
 router.post("/book", verifyUser, createBooking);
+
+router.post("/create-checkout-session", createCheckoutSession);
+router.post("/verify-payment", sessionStatus);
 
 // @route   GET api/bookings
 // @desc    Get all bookings for current user

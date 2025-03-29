@@ -5,18 +5,25 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockServices, mockWorkers } from "@/data/mockData";
 import BookingForm from "@/components/booking/BookingForm";
 import BookingSummary from "@/components/booking/BookingSummary";
 import PaymentSection from "@/components/booking/PaymentSection";
 import { getService } from "../api/servicesApi";
 import { getUsers } from "../api/authServices";
-import { createBooking, createPaymentIntent } from "../api/bookingApi";
+import {
+  createBooking,
+  intiatePayment,
+  verifyPayment,
+} from "../api/bookingApi";
 import axios from "axios";
-import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-const stripePromise = loadStripe("pk_test_51MX036SABObgi1uhHXCwZMh1JkOuNafgiCZWnvEEzRHTPNDRFbwlOr5TOopcgNnuMQ0gDTnqWKWlZhzlrHZUTKH800JIj4QVSP");
-
+import {
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout,
+} from "@stripe/react-stripe-js";
+const stripePromise = loadStripe(
+  "pk_test_51MX036SABObgi1uhHXCwZMh1JkOuNafgiCZWnvEEzRHTPNDRFbwlOr5TOopcgNnuMQ0gDTnqWKWlZhzlrHZUTKH800JIj4QVSP"
+);
 
 const BookService = () => {
   const { id } = useParams();
@@ -38,7 +45,7 @@ const BookService = () => {
   const [services, setServices] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [clientSecret, setClientSecret] = useState(null);
-const [paymentIntentId, setPaymentIntentId] = useState(null);
+  const [paymentIntentId, setPaymentIntentId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPaymentId, setSelectedPaymentId] = useState("");
 
@@ -112,30 +119,21 @@ const [paymentIntentId, setPaymentIntentId] = useState(null);
     }
   }, [serviceDetails, currentUser, paymentMethods]);
 
-  const initiatePayment = async( ) => {
+  const initiatePayment = async () => {
     try {
-      const token = localStorage.getItem("token");
-
-        const amountInPaise = 1 * 100; // ₹1 = 100 paise
-        const { data } = await axios.post(
-          "http://localhost:5000/api/v1/payment-intent",
-          {
-            amount: amountInPaise, // Amount goes here (₹10 = 10)
-            currency: "inr",
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`, // Token should be here
-              "Content-Type": "application/json", // Fix incorrect key name
-            },
-          }
-        );
-        setClientSecret(data.paymentIntent.client_secret);
-        setPaymentIntentId(data.paymentIntent.id);
+      const res = await intiatePayment({
+        workerName: "Worker1",
+        serviceName: "Service1",
+      });
+      if (res.status) {
+        setClientSecret(res.clientSecret);
+        setCurrentStep(2);
+      }
+      return res;
     } catch (error) {
-      console.log('error in payment', error)
+      console.log("error in payment", error);
     }
-  }
+  };
 
   const handleNextStep = () => {
     if (!isAuthenticated) {
@@ -166,7 +164,7 @@ const [paymentIntentId, setPaymentIntentId] = useState(null);
       }
 
       // Move to payment step
-      initiatePayment()
+      initiatePayment();
       setCurrentStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -215,19 +213,20 @@ const [paymentIntentId, setPaymentIntentId] = useState(null);
       };
 
       if (paymentMethod === "online") {
-        console.log('calling createBooking')
-        const response = await createBooking({
-          ...bookingData,
-          paymentIntentId: paymentIntentId,
-        });
-        
-        if (response.status) {
-          toast({
-            title: "Booking Successful",
-            description: "Your service has been booked successfully!",
-          });
-          setIsSubmitting(false);
-          navigate("/customer/dashboard");
+        const initiatedPaymentRes = await initiatePayment();
+       
+        const res = await verifyPayment({session_id: initiatedPaymentRes.session_id});
+
+        if (res.paymentStatus === "paid") {
+          const response = await createBooking(bookingData);
+          if (response.status) {
+            toast({
+              title: "Booking Successful",
+              description: "Your service has been booked successfully!",
+            });
+            setIsSubmitting(false);
+            navigate("/customer/dashboard");
+          }
         }
       } else {
         const response = await createBooking(bookingData);
@@ -333,26 +332,37 @@ const [paymentIntentId, setPaymentIntentId] = useState(null);
                     workerName={workerName}
                     handleSubmit={(e) => {
                       e.preventDefault();
-                      handleNextStep();
+                      handleSubmit();
                     }}
                     isSubmitting={isSubmitting}
                     serviceDetails={serviceDetails}
                   />
                 ) : (
-                  <Elements stripe={stripePromise}>
-                  <PaymentSection
-                    paymentMethod={paymentMethod}
-                    setPaymentMethod={setPaymentMethod}
-                    paymentMethods={paymentMethods}
-                    selectedPaymentId={selectedPaymentId}
-                    setSelectedPaymentId={setSelectedPaymentId}
-                    handleSubmit={handleSubmit}
-                    isSubmitting={isSubmitting}
-                    handlePreviousStep={handlePreviousStep}
-                    addNewPaymentMethod={addNewPaymentMethod}
-                    clientSecret={clientSecret}
-                  />
-                  </Elements>
+                  // <Elements stripe={stripePromise}>
+                  // <PaymentSection
+                  //   paymentMethod={paymentMethod}
+                  //   setPaymentMethod={setPaymentMethod}
+                  //   paymentMethods={paymentMethods}
+                  //   selectedPaymentId={selectedPaymentId}
+                  //   setSelectedPaymentId={setSelectedPaymentId}
+                  //   handleSubmit={handleSubmit}
+                  //   isSubmitting={isSubmitting}
+                  //   handlePreviousStep={handlePreviousStep}
+                  //   addNewPaymentMethod={addNewPaymentMethod}
+                  //   clientSecret={clientSecret}
+                  //   stripe={stripePromise}
+                  // />
+                  // </Elements>
+                  <>
+                    {clientSecret && (
+                      <EmbeddedCheckoutProvider
+                        stripe={stripePromise}
+                        options={{ clientSecret }}
+                      >
+                        <EmbeddedCheckout />
+                      </EmbeddedCheckoutProvider>
+                    )}
+                  </>
                 )}
               </div>
 

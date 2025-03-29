@@ -1,4 +1,5 @@
 const Booking = require("../models/Booking.js");
+const mongoose = require("mongoose");
 const Service = require("../models/Service.js");
 const User = require("../models/User.js");
 const stripe = require("stripe")(
@@ -6,29 +7,77 @@ const stripe = require("stripe")(
 );
 // console.log(process.env.STRIPE_SECRET_KEY);
 
-const createPaymentIntent = async (req, res) => {
-  try {
-    const { amount } = req.body;
+// const createPaymentIntent = async (req, res) => {
+//   try {
+//     const { amount } = req.body;
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount, // Convert to cents
-      currency: "inr",
-      payment_method_types: ["card"],
+//     const paymentIntent = await stripe.paymentIntents.create({
+//       amount: amount, // Convert to cents
+//       currency: "inr",
+//       payment_method_types: ["card"],
+//     });
+//     return res.status(201).json({
+//       message: "PaymentIntented successfully",
+//       paymentIntent,
+//     });
+//   } catch (error) {
+//     console.log("Getting error in createPaymentIntent", error);
+//     return res.status(500).json({ status: false, message: error.message });
+//   }
+// };
+
+const createCheckoutSession = async(req, res) => {
+  try {
+    const {workerName, serviceName} = req.body;
+    
+    const session = await stripe.checkout.sessions.create({
+      ui_mode: "embedded",
+      line_items: [
+        {
+          price_data: {
+            currency: "inr",
+            product_data: {
+              name: `${workerName} - ${serviceName}`,
+            },
+            unit_amount: 1000, // Amount in paise (₹10 = 1000 paise)
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      return_url: `http://localhost:5173/return?session_id={CHECKOUT_SESSION_ID}`,
     });
+    
     return res.status(201).json({
-      message: "PaymentIntented successfully",
-      paymentIntent,
+      status: true,
+      message: "Payment intiated successfully",
+      clientSecret: session.client_secret,
+      session_id: session.id,
     });
   } catch (error) {
-    console.log("Getting error in createPaymentIntent", error);
+    console.log("Getting error in createCheckoutSession", error);
     return res.status(500).json({ status: false, message: error.message });
   }
 };
 
+
+const sessionStatus = async(req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(req.body.session_id);
+    return res.status(201).json({
+      status: true,
+      message: "got the sessionStatus",
+      paymentStatus: session.payment_status,
+    });
+  } catch (error) {
+    console.log("Getting error in sessionStatus", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+}
+
 const createBooking = async (req, res) => {
   try {
     const {
-      paymentIntentId,
       workerId,
       totalAmount,
       serviceId,
@@ -39,24 +88,21 @@ const createBooking = async (req, res) => {
     } = req.body;
 
     // Retrieve Payment Intent from Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (paymentIntent.status !== "succeeded") {
-      return res
-        .status(400)
-        .json({ status: false, message: "Payment not successful" });
-    }
+    // const session = await stripe.checkout.sessions.retrieve(session_id);
+    // if (!session || session.payment_status !== "paid") {
+    //   return res.status(400).json({ status: false, message: "Payment not successful" });
+    // }
 
     // Check if service exists
     const service = await Service.findById(serviceId);
     if (!service) {
-      return res.status(404).json({status: false, msg: "Service not found" });
+      return res.status(404).json({ status: false, message: "Service not found" });
     }
 
     // Check if worker exists
     const worker = await User.findById(workerId);
     if (!worker || worker.role !== "worker") {
-      return res.status(404).json({status: false, msg: "Worker not found" });
+      return res.status(404).json({ status: false, message: "Worker not found" });
     }
 
     const booking = new Booking({
@@ -68,7 +114,7 @@ const createBooking = async (req, res) => {
       address,
       paymentMethod,
       payment: {
-        paymentIntentId,
+        paymentIntentId: "",
         status: "completed",
       },
       totalAmount,
@@ -76,33 +122,38 @@ const createBooking = async (req, res) => {
 
     await booking.save();
 
-
-    await User.findOneAndUpdate(
-      { _id: req.user._id },
+    await User.findByIdAndUpdate(
+      req.user._id,
       { $push: { bookings: booking._id } },
-      {new: true}
-    )
-    return res
-      .status(200)
-      .json({ status: true, message: "Booking is created", booking });
+      { new: true }
+    );
+
+    return res.status(200).json({ status: true, message: "Booking is created", booking });
   } catch (err) {
-    console.error("create booking", err.message);
-    return res.status(500).send("Server error");
+    console.error("createBooking error:", err.message);
+    return res.status(500).json({ status: false, message: "Server error" });
   }
 };
 
 
+
 const getBookingsByCustomerId = async (req, res) => {
   try {
-    const bookings = await Booking.find({ customer: String(req.user._id) }).populate(
-      "worker service"
-    );
-  return  res.status(200).json({ success: true, bookings });
+    if (!req.user || !req.user._id) {
+      return res.status(400).json({ success: false, message: "User ID missing" });
+    }
+
+    const customerId = new mongoose.Types.ObjectId(req.user._id);
+
+    const bookings = await Booking.find({ customer: customerId })
+      .populate("worker service");
+
+    return res.status(200).json({ success: true, bookings });
   } catch (error) {
-    console.log("Error fetching bookings", error);
-    res.status(500).json({
+    console.error("Error fetching bookings", error);
+    return res.status(500).json({
       success: false,
-      message: "Error fetching bookings"
+      message: "Error fetching bookings",
     });
   }
 }
@@ -236,12 +287,13 @@ const getBookingById = async (req, res) => {
 
 
 module.exports = {
-  createPaymentIntent,
   createBooking,
   getBookingsByCustomer,
   getBookingsByWorker,
   updateBookingStatus,
   deleteBooking,
   getBookingsByCustomerId,
-  getBookingById
+  getBookingById,
+  createCheckoutSession,
+  sessionStatus
 };

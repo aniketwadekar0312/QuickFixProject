@@ -1,8 +1,13 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import axiosInstance from "../api/api";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { getUserById } from "../api/authServices";
+import {
+  getUserById,
+  updateUserProfile,
+  loginUser,
+  registerUser,
+  logoutUser,
+} from "../api/authServices";
 
 const AuthContext = createContext(undefined);
 
@@ -15,56 +20,41 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const storedUser = localStorage.getItem("currentUser");
-      
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          setCurrentUser(user);
-          
-          // Optionally verify token validity with backend
-          // try {
-          //   await getUserById(user._id);
-          // } catch (error) {
-          //   // If token is invalid, logout
-          //   console.error("Invalid token:", error);
-          //   logout();
-          // }
-        } catch (error) {
-          console.error("Failed to parse stored user:", error);
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-        }
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        if(storedUser) {
+          const response = await getUserById(storedUser._id);
+          if(response.status && response.user) {
+            setCurrentUser(response.user);
+          }
+        }else{
+          setCurrentUser(null);
+          navigate("/login");
+        };
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        setCurrentUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    
+
     checkAuth();
   }, []);
-  
+
   const login = async (email, password, role) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await axiosInstance.post("/v1/login", {
-        email,
-        password,
-        role,
-      });
+      const response = await loginUser({ email, password, role });
 
-      if (response.data.status && response.data && response.data.token) {
-        const { user, token } = response.data;
-
-        // Save user & token in localStorage
-        localStorage.setItem("currentUser", JSON.stringify(user));
-        localStorage.setItem("token", token);
-        
-        setCurrentUser(user);
-
+      if (response.data.status && response.data.user) {
+        setCurrentUser(response.data.user);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
         toast({
           title: "Logged in successfully",
-          description: `Welcome back, ${user.name}!`,
+          description: `Welcome back, ${response.data.user.name}!`,
         });
         navigate(`/${role}/dashboard`);
       }
@@ -84,12 +74,11 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.post("/v1/register", userData);
-      const { newuser } = response.data;
-      if (response.data.status && response.data) {
+      const response = await registerUser(userData);
+      if (response.data.status && response.data.newuser) {
         toast({
           title: "Registration successful",
-          description: `Welcome, ${newuser.name}!`,
+          description: `Welcome, ${response.data.newuser.name}!`,
         });
         navigate(`/login`);
       }
@@ -105,51 +94,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateUser = async (id,data) => {
+  const updateUser = async (id, data) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.put(`/v1/user/${id}`, data); // Use PUT instead of POST
-      const { user } = response.data;
-  
-      if (response.data.status && user) {
-        // Update the current user in context
-        setCurrentUser(user);
-        localStorage.setItem("currentUser", JSON.stringify(user)); // Persist user update
-
+      const response = await updateUserProfile(id, data);
+      if (response.data.status && response.data.user) {
+        setCurrentUser(response.data.user);
         toast({
           title: "Profile Updated",
-          description: `Your profile has been successfully updated.`,
+          description: "Your profile has been successfully updated.",
         });
-  
       }
     } catch (error) {
       setError(error.response?.data?.message);
       toast({
         title: "Update Failed",
-        description: error.response?.data?.message || "An error occurred while updating your profile.",
+        description:
+          error.response?.data?.message ||
+          "An error occurred while updating your profile.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
-  
 
-  const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("token");
-
-    delete axiosInstance.defaults.headers.common["Authorization"];
-
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
+  const logout = async () => {
+    try {
+      const response = await logoutUser();
+      if (response.data.status) {
+        setCurrentUser(null);
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out.",
+        });
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
-  // console.log(currentUser);
   const value = {
     currentUser,
     setCurrentUser,
