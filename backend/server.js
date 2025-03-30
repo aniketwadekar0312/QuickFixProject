@@ -11,7 +11,7 @@ const bookingRouter = require("../backend/routes/bookingRoute.js");
 const adminDashboardRouter = require("../backend/routes/admindashboardRoute.js");
 const reviewRouter = require("./routes/reviewRoute.js");
 const paymentMethodRouter = require("./routes/PaymentMethodRouter.js");
-const workerRoutes = require("./routes/workerRoutes");
+const workerRoutes = require("./routes/workerRoutes.js");
 
 // Load environment variables
 dotenv.config();

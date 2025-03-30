@@ -7,11 +7,10 @@ import { IndianRupee, Calendar, ArrowUpRight, ArrowDownRight, BarChart, Download
 import { useQuery } from "@tanstack/react-query";
 import { getWorkerEarnings, getWorkerBookings } from "@/api/workerApi";
 import { ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
-import { useEffect } from "react";
 
 const WorkerEarnings = () => {
   const { toast } = useToast();
-
+  
   // Fetch earnings data
   const { data: earningsData, isLoading: earningsLoading, error: earningsError } = useQuery({
     queryKey: ['workerEarnings'],
@@ -20,7 +19,7 @@ const WorkerEarnings = () => {
     retry: 2,
   });
 
-  // Fetch recent bookings
+  // Fetch recent bookings for transactions
   const { data: bookingsData, isLoading: bookingsLoading, error: bookingsError } = useQuery({
     queryKey: ['workerBookings'],
     queryFn: getWorkerBookings,
@@ -28,28 +27,23 @@ const WorkerEarnings = () => {
     retry: 2,
   });
 
-  // Handle errors with useEffect to prevent infinite re-renders
-  useEffect(() => {
-    if (earningsError) {
-      toast({
-        title: "Error fetching earnings",
-        description: earningsError.message || "Failed to load earnings data",
-        variant: "destructive",
-      });
-    }
-  }, [earningsError, toast]);
+  // Handle errors
+  if (earningsError) {
+    toast({
+      title: "Error fetching earnings",
+      description: earningsError.message || "Failed to load earnings data",
+      variant: "destructive",
+    });
+  }
 
-  useEffect(() => {
-    if (bookingsError) {
-      toast({
-        title: "Error fetching bookings",
-        description: bookingsError.message || "Failed to load booking data",
-        variant: "destructive",
-      });
-    }
-  }, [bookingsError, toast]);
+  if (bookingsError) {
+    toast({
+      title: "Error fetching bookings",
+      description: bookingsError.message || "Failed to load booking data",
+      variant: "destructive",
+    });
+  }
 
-  // Show loading state
   if (earningsLoading || bookingsLoading) {
     return (
       <Layout>
@@ -60,18 +54,16 @@ const WorkerEarnings = () => {
     );
   }
 
-  // Process data safely
-  const totalEarnings = earningsData?.data?.totalEarnings ?? 0;
-  const monthlyEarnings = earningsData?.data?.monthlyEarnings ?? [];
+  const totalEarnings = earningsData?.data?.totalEarnings || 0;
+  const monthlyEarnings = earningsData?.data?.monthlyEarnings || [];
   const recentTransactions = bookingsData?.data
-    ?.filter(booking => booking?.status === 'completed') // Ensure booking is defined
-    ?.slice(0, 5) ?? [];
+    ?.filter(booking => booking)
+    ?.slice(0, 5) || [];
 
-  // Handle statement download
   const handleDownloadStatement = () => {
     toast({
       title: "Statement downloaded",
-      description: "Your earnings statement has been downloaded successfully.",
+      description: "Your earnings statement has been downloaded successfully."
     });
   };
 
@@ -125,7 +117,9 @@ const WorkerEarnings = () => {
                   <div>
                     <p className="text-gray-500">Completed Jobs</p>
                     <h3 className="text-2xl font-bold flex items-center">
-                      {recentTransactions.length}
+                      {recentTransactions
+                            ?.filter(booking => booking.status === 'completed')
+                            .length}
                     </h3>
                     <p className="text-sm text-gray-500">Total completed jobs</p>
                   </div>
@@ -178,13 +172,15 @@ const WorkerEarnings = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recentTransactions.map((booking) => (
+                    {recentTransactions
+                            ?.filter(booking => booking.status === 'completed')
+                            .map((booking) => (
                       <div key={booking._id} className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{booking.service?.name || 'Service'}</p>
                           <p className="text-sm text-gray-500">{booking.customer?.name || 'Customer'}</p>
                           <p className="text-xs text-gray-400">
-                            {new Date(booking.createdAt).toLocaleDateString()}
+                            {new Date(booking.createdAt).toLocaleDateString('en-IN')}
                           </p>
                         </div>
                         <div className="text-right">
@@ -239,17 +235,20 @@ const WorkerEarnings = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {recentTransactions.map((booking) => (
+                          {recentTransactions
+                            ?.map((booking) => (
                             <tr key={booking._id} className="border-b">
                               <td className="py-3 px-4">
-                                {new Date(booking.createdAt).toLocaleDateString()}
+                                {new Date(booking.createdAt).toLocaleDateString('en-IN')}
                               </td>
                               <td className="py-3 px-4">{booking.service?.name || 'Service'}</td>
                               <td className="py-3 px-4">{booking.customer?.name || 'Customer'}</td>
                               <td className="py-3 px-4 text-right">₹{booking.totalAmount.toLocaleString()}</td>
                               <td className="py-3 px-4 text-right">
-                                <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                                  Completed
+                              <span
+                                  className={`px-2 py-1 rounded-full text-xs 
+                                    ${booking.status === "completed" ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}`}>
+                                  {booking.status}
                                 </span>
                               </td>
                             </tr>
@@ -272,17 +271,21 @@ const WorkerEarnings = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {recentTransactions.map((booking) => (
+                          {recentTransactions
+                            ?.filter(booking => booking.status === 'completed')
+                            .map((booking) => (
                             <tr key={booking._id} className="border-b">
                               <td className="py-3 px-4">
-                                {new Date(booking.createdAt).toLocaleDateString()}
+                                {new Date(booking.createdAt).toLocaleDateString('en-IN')}
                               </td>
                               <td className="py-3 px-4">{booking.service?.name || 'Service'}</td>
                               <td className="py-3 px-4">{booking.customer?.name || 'Customer'}</td>
                               <td className="py-3 px-4 text-right">₹{booking.totalAmount.toLocaleString()}</td>
                               <td className="py-3 px-4 text-right">
-                                <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                                  Completed
+                              <span
+                                  className={`px-2 py-1 rounded-full text-xs 
+                                    ${booking.status === "completed" ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}`}>
+                                  {booking.status}
                                 </span>
                               </td>
                             </tr>
@@ -305,20 +308,22 @@ const WorkerEarnings = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {bookingsData?.data
-                            ?.filter(booking => booking.status === 'pending')
+                          {recentTransactions
+                            ?.filter(booking => booking.status === 'pending' || booking.status === "accepted")
                             .map((booking) => (
                               <tr key={booking._id} className="border-b">
                                 <td className="py-3 px-4">
-                                  {new Date(booking.createdAt).toLocaleDateString()}
+                                  {new Date(booking.createdAt).toLocaleDateString('en-IN')}
                                 </td>
                                 <td className="py-3 px-4">{booking.service?.name || 'Service'}</td>
                                 <td className="py-3 px-4">{booking.customer?.name || 'Customer'}</td>
                                 <td className="py-3 px-4 text-right">₹{booking.totalAmount.toLocaleString()}</td>
                                 <td className="py-3 px-4 text-right">
-                                  <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
-                                    Pending
-                                  </span>
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs 
+                                    ${booking.status === "completed" ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}`}>
+                                  {booking.status}
+                                </span>
                                 </td>
                               </tr>
                             ))}

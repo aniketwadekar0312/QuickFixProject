@@ -142,7 +142,7 @@ const WorkerDetails = () => {
                   <div className="space-y-4">
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 text-gray-500 mr-2" />
-                      <span>{worker.location}</span>
+                      <span className=" capitalize">{worker.location}</span>
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 text-gray-500 mr-2" />
@@ -154,7 +154,7 @@ const WorkerDetails = () => {
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                      <span>Joined on {worker.createdAt ? new Date(worker.createdAt).toLocaleDateString() : 'N/A'}</span>
+                      <span>Joined on {worker.createdAt ? new Date(worker.createdAt).toLocaleDateString("en-IN") : 'N/A'}</span>
                     </div>
                     <Separator />
                     <div>
@@ -253,7 +253,7 @@ const WorkerDetails = () => {
                             <div className="text-sm text-gray-600 mb-2">
                               <span>Booking #{booking._id.slice(-6)}</span>
                               <span className="mx-2">•</span>
-                              <span>{booking.date ? new Date(booking.date).toLocaleDateString() : 'N/A'}</span>
+                              <span>{booking.date ? new Date(booking.date).toLocaleDateString("en-IN") : 'N/A'}</span>
                               <span className="mx-2">•</span>
                               <span>₹{booking.totalAmount}</span>
                             </div>

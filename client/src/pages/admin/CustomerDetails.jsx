@@ -133,7 +133,7 @@ const CustomerDetails = () => {
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                      {/* <span>Joined on {customer.createdAt.toLocaleDateString()}</span> */}
+                      <span>Joined on {new Date(customer?.createdAt).toLocaleDateString('en-IN')}</span>
                     </div>
                     <Separator />
                     <div>

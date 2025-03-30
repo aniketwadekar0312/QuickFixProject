@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { verifyUser } = require('../middleware/auth');
 const {
   getWorkerBookings,
   updateWorkerAvailability,
@@ -11,27 +12,27 @@ const {
   updateService,
   deleteService
 } = require('../controllers/workerController');
-const { verifyUser } = require('../middleware/auth');
 
+// All routes are protected and require worker role
+router.use(verifyUser);
 
-// Booking routes
+// Worker profile routes
+router.get('/profile', getWorkerProfile);
+
+// Worker availability routes
+router.put('/availability', updateWorkerAvailability);
+
+// Worker bookings routes
 router.get('/bookings', getWorkerBookings);
 router.put('/bookings/:id/status', updateBookingStatus);
 
-// Profile and availability routes
-router.get('/profile', getWorkerProfile);
-router.put('/availability', updateWorkerAvailability);
-
-// Earnings route
+// Worker earnings routes
 router.get('/earnings', getWorkerEarnings);
 
-// Service management routes
-router.route('/services')
-  .get(getWorkerServices)
-  .post(createService);
-
-router.route('/services/:id')
-  .put(updateService)
-  .delete(deleteService);
+// Worker services routes
+router.get('/services', getWorkerServices);
+router.post('/services', createService);
+router.put('/services/:id', updateService);
+router.delete('/services/:id', deleteService);
 
 module.exports = router; 

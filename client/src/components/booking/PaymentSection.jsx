@@ -154,9 +154,9 @@ const PaymentSection = ({
   stripe
 }) => {
   const [useNewCard, setUseNewCard] = useState(false);
-  const { toast } = useToast();
+  // const { toast } = useToast();
   const queryClient = useQueryClient();
-  const stripe = useStripe();
+  // const stripe = useStripe();
 
   // Fetch payment methods using React Query
   const { data: response, isLoading } = useQuery({

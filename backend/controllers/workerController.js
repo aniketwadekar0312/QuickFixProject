@@ -82,10 +82,16 @@ const updateBookingStatus = asyncHandler(async (req, res) => {
     }
 
     // Validate status
-    const validStatuses = ['confirmed', 'completed', 'cancelled'];
+    const validStatuses = ['accepted', 'rejected', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
       res.status(400);
       throw new Error('Invalid status');
+    }
+
+    // Additional validation for status transitions
+    if (booking.status !== 'pending' && (status === 'accepted' || status === 'rejected')) {
+      res.status(400);
+      throw new Error('Can only accept or reject pending bookings');
     }
 
     // Update booking status
@@ -323,4 +329,4 @@ module.exports = {
   createService,
   updateService,
   deleteService
-}; 
+};

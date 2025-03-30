@@ -8,63 +8,115 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { mockBookings, mockServices, mockUsers } from "@/data/mockData";
 import { Calendar, User, Star, MapPin, Clock, Briefcase, Settings, DollarSign, Clipboard, Check, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import PendingRequests from "@/components/booking/PendingRequests";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getWorkerBookings, updateWorkerAvailability, updateBookingStatus, getWorkerProfile, getWorkerEarnings } from "@/api/workerApi";
 
 const WorkerDashboard = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
-  const [isAvailable, setIsAvailable] = useState(true);
+  const queryClient = useQueryClient();
   
-  // Get worker bookings from mock data
-  const workerBookings = mockBookings.filter(
-    booking => booking.workerId === "worker1" // Using worker1 since current user might not match mock data
-  );
-  
-  const findCustomerName = (customerId) => {
-    const customer = mockUsers.find(user => user.id === customerId);
-    return customer ? customer.name : "Unknown Customer";
-  };
-  
-  const findServiceName = (serviceId) => {
-    const service = mockServices.find(s => s.id === serviceId);
-    return service ? service.name : "Unknown Service";
-  };
-  
-  const getStatusBadgeVariant = (status) => {
-    switch (status) {
-      case "pending":
-        return "outline";
-      case "accepted":
-        return "secondary";
-      case "completed":
-        return "default";
-      case "rejected":
-        return "destructive";
-      default:
-        return "outline";
+  // Fetch worker data using React Query
+  const { data: workerProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['workerProfile'],
+    queryFn: getWorkerProfile,
+    enabled: !!currentUser,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
+
+  const { data: bookingsData, isLoading: bookingsLoading } = useQuery({
+    queryKey: ['workerBookings'],
+    queryFn: getWorkerBookings,
+    enabled: !!currentUser,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
+
+  const { data: earningsData, isLoading: earningsLoading } = useQuery({
+    queryKey: ['workerEarnings'],
+    queryFn: getWorkerEarnings,
+    enabled: !!currentUser,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
+
+  // Mutations
+  const availabilityMutation = useMutation({
+    mutationFn: updateWorkerAvailability,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['workerProfile']);
+      toast({
+        title: "Availability Updated",
+        description: "Your availability status has been updated successfully."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update availability",
+        variant: "destructive"
+      });
     }
-  };
+  });
+
+  const bookingStatusMutation = useMutation({
+    mutationFn: ({ bookingId, status }) => updateBookingStatus(bookingId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['workerBookings']);
+      toast({
+        title: "Booking Updated",
+        description: "The booking status has been updated successfully."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update booking status",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // State
+  const [isAvailable, setIsAvailable] = useState(workerProfile?.isAvailable ?? true);
   
+  // Update isAvailable when workerProfile changes
+  useEffect(() => {
+    if (workerProfile?.isAvailable !== undefined) {
+      setIsAvailable(workerProfile.isAvailable);
+    }
+  }, [workerProfile]);
+
+  // Handle availability change
   const handleAvailabilityChange = () => {
-    setIsAvailable(!isAvailable);
-    toast({
-      title: !isAvailable ? "You are now available" : "You are now unavailable",
-      description: !isAvailable ? "Customers can now book your services." : "Customers cannot book your services at the moment.",
-    });
-  };
-  
-  const handleBookingAction = (bookingId, action) => {
-    toast({
-      title: `Booking ${action === "accept" ? "accepted" : action === "reject" ? "rejected" : "marked as complete"}`,
-      description: `You have successfully ${action === "accept" ? "accepted" : action === "reject" ? "rejected" : "completed"} the booking.`,
-    });
+    const newAvailability = !isAvailable;
+    setIsAvailable(newAvailability);
+    availabilityMutation.mutate(newAvailability);
   };
 
-  // Count for badge notifications
-  const pendingRequestsCount = workerBookings.filter(b => b.status === "pending").length;
-  const upcomingJobsCount = workerBookings.filter(b => b.status === "accepted").length;
+  // Handle booking action
+  const handleBookingAction = async (bookingId, status) => {
+    bookingStatusMutation.mutate({ bookingId, status });
+  };
+
+  // Filter bookings by status
+  const pendingRequests = bookingsData?.data?.filter(b => b.status === "pending") || [];
+  const upcomingJobs = bookingsData?.data?.filter(b => b.status === "accepted") || [];
+  const completedJobs = bookingsData?.data?.filter(b => b.status === "completed") || [];
+
+  if (profileLoading || bookingsLoading || earningsLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -77,25 +129,25 @@ const WorkerDashboard = () => {
                 <div className="flex flex-col items-center text-center">
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                     <img
-                      src={currentUser?.photoUrl || "https://i.pravatar.cc/150?img=2"}
-                      alt={currentUser?.name}
+                      src={currentUser?.photoUrl || workerProfile?.data?.photoUrl || "https://i.pravatar.cc/150?img=2"}
+                      alt={currentUser?.name || workerProfile?.data?.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <h2 className="text-xl font-bold">{currentUser?.name || "Jane Smith"}</h2>
-                  <p className="text-gray-600">{currentUser?.email || "jane@example.com"}</p>
+                  <h2 className="text-xl font-bold">{currentUser?.name || workerProfile?.data?.name}</h2>
+                  <p className="text-gray-600">{currentUser?.email || workerProfile?.data?.email}</p>
                   <div className="flex items-center mt-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
                         className={`h-4 w-4 ${
-                          star <= 4.5
+                          star <= (workerProfile?.data?.rating || 0)
                             ? "fill-yellow-400 stroke-yellow-400"
                             : "stroke-gray-300"
                         }`}
                       />
                     ))}
-                    <span className="ml-1 text-sm">4.5</span>
+                    <span className="ml-1 text-sm">{workerProfile?.data?.rating?.toFixed(1) || "0.0"}</span>
                   </div>
                   <div className="mt-4 w-full">
                     <div className="flex items-center justify-between mb-4">
@@ -109,6 +161,7 @@ const WorkerDashboard = () => {
                         id="availability"
                         checked={isAvailable}
                         onCheckedChange={handleAvailabilityChange}
+                        disabled={availabilityMutation.isLoading}
                       />
                     </div>
                     <Button asChild variant="outline" size="sm" className="w-full">
@@ -142,7 +195,7 @@ const WorkerDashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Main Content */}
             <div className="lg:w-3/4">
               <h1 className="text-2xl font-bold mb-6">Service Provider Dashboard</h1>
@@ -151,23 +204,23 @@ const WorkerDashboard = () => {
                 <TabsList className="grid w-full grid-cols-3 mb-6">
                   <TabsTrigger value="requests" className="relative">
                     Service Requests
-                    {pendingRequestsCount > 0 && (
+                    {pendingRequests.length > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        {pendingRequestsCount}
+                        {pendingRequests.length}
                       </span>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="upcoming" className="relative">
                     Upcoming Jobs
-                    {upcomingJobsCount > 0 && (
+                    {upcomingJobs.length > 0 && (
                       <span className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        {upcomingJobsCount}
+                        {upcomingJobs.length}
                       </span>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="completed">Completed Jobs</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="requests">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
@@ -175,67 +228,67 @@ const WorkerDashboard = () => {
                         <Clipboard className="h-5 w-5 mr-2 text-orange-500" />
                         Pending Service Requests
                       </CardTitle>
-                      {pendingRequestsCount > 0 && (
+                      {pendingRequests.length > 0 && (
                         <Badge variant="outline" className="bg-orange-50">
-                          {pendingRequestsCount} new {pendingRequestsCount === 1 ? 'request' : 'requests'}
+                          {pendingRequests.length} new {pendingRequests.length === 1 ? 'request' : 'requests'}
                         </Badge>
                       )}
                     </CardHeader>
                     <CardContent>
-                      {workerBookings.filter(b => b.status === "pending").length > 0 ? (
+                      {pendingRequests.length > 0 ? (
                         <div className="space-y-4">
-                          {workerBookings
-                            .filter(b => b.status === "pending")
-                            .map((booking) => (
-                              <div
-                                key={booking.id}
-                                className="border rounded-lg p-4 hover:border-orange-200 transition-colors bg-orange-50/30"
-                              >
-                                <div className="flex flex-col md:flex-row justify-between">
-                                  <div>
-                                    <h3 className="font-semibold text-lg">
-                                      {findServiceName(booking.serviceId)}
-                                    </h3>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <User className="h-4 w-4 mr-1" />
-                                      <span>Customer: {findCustomerName(booking.customerId)}</span>
-                                    </div>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <Calendar className="h-4 w-4 mr-1" />
-                                      <span>
-                                        {booking.date.toLocaleDateString()} at {booking.time}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <MapPin className="h-4 w-4 mr-1" />
-                                      <span>{booking.location}</span>
-                                    </div>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <AlertCircle className="h-4 w-4 mr-1" />
-                                      <span className="text-orange-600 font-medium">Awaiting your response</span>
-                                    </div>
+                          {pendingRequests.map((booking) => (
+                            <div
+                              key={booking._id}
+                              className="border rounded-lg p-4 hover:border-orange-200 transition-colors bg-orange-50/30"
+                            >
+                              <div className="flex flex-col md:flex-row justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-lg">
+                                    {booking.service.name}
+                                  </h3>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <User className="h-4 w-4 mr-1" />
+                                    <span>Customer: {booking.customer.name}</span>
                                   </div>
-                                  <div className="mt-4 md:mt-0 flex flex-col items-end">
-                                    <div className="font-semibold">₹{booking.price}</div>
-                                    <div className="flex gap-2 mt-4">
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handleBookingAction(booking.id, "accept")}
-                                      >
-                                        Accept
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => handleBookingAction(booking.id, "reject")}
-                                      >
-                                        Reject
-                                      </Button>
-                                    </div>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <Calendar className="h-4 w-4 mr-1" />
+                                    <span>
+                                      {new Date(booking.date).toLocaleDateString()} at {booking.timeSlot}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <MapPin className="h-4 w-4 mr-1" />
+                                    <span>{booking.address}</span>
+                                  </div>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <AlertCircle className="h-4 w-4 mr-1" />
+                                    <span className="text-orange-600 font-medium">Awaiting your response</span>
+                                  </div>
+                                </div>
+                                <div className="mt-4 md:mt-0 flex flex-col items-end">
+                                  <div className="font-semibold">₹{booking.totalAmount}</div>
+                                  <div className="flex gap-2 mt-4">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleBookingAction(booking._id, "accepted")}
+                                      disabled={bookingStatusMutation.isLoading}
+                                    >
+                                      Accept
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleBookingAction(booking._id, "rejected")}
+                                      disabled={bookingStatusMutation.isLoading}
+                                    >
+                                      Reject
+                                    </Button>
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="text-center py-8">
@@ -249,86 +302,71 @@ const WorkerDashboard = () => {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 <TabsContent value="upcoming">
                   <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
+                    <CardHeader>
                       <CardTitle className="flex items-center">
                         <Calendar className="h-5 w-5 mr-2 text-blue-500" />
                         Upcoming Jobs
                       </CardTitle>
-                      {upcomingJobsCount > 0 && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-                          {upcomingJobsCount} upcoming {upcomingJobsCount === 1 ? 'job' : 'jobs'}
-                        </Badge>
-                      )}
                     </CardHeader>
                     <CardContent>
-                      {workerBookings.filter(b => b.status === "accepted").length > 0 ? (
+                      {upcomingJobs.length > 0 ? (
                         <div className="space-y-4">
-                          {workerBookings
-                            .filter(b => b.status === "accepted")
-                            .sort((a, b) => a.date.getTime() - b.date.getTime())
-                            .map((booking) => (
-                              <div
-                                key={booking.id}
-                                className="border rounded-lg p-4 hover:border-blue-200 transition-colors bg-blue-50/30"
-                              >
-                                <div className="flex flex-col md:flex-row justify-between">
-                                  <div>
-                                    <h3 className="font-semibold text-lg">
-                                      {findServiceName(booking.serviceId)}
-                                    </h3>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <User className="h-4 w-4 mr-1" />
-                                      <span>Customer: {findCustomerName(booking.customerId)}</span>
-                                    </div>
-                                    <div className="flex items-center text-blue-600 mt-1 font-medium">
-                                      <Calendar className="h-4 w-4 mr-1" />
-                                      <span>
-                                        {booking.date.toLocaleDateString()} at {booking.time}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <MapPin className="h-4 w-4 mr-1" />
-                                      <span>{booking.location}</span>
-                                    </div>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <Clock className="h-4 w-4 mr-1" />
-                                      <span>
-                                        {Math.round((booking.date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days remaining
-                                      </span>
-                                    </div>
+                          {upcomingJobs.map((booking) => (
+                            <div
+                              key={booking._id}
+                              className="border rounded-lg p-4 hover:border-blue-200 transition-colors bg-blue-50/30"
+                            >
+                              <div className="flex flex-col md:flex-row justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-lg">
+                                    {booking.service.name}
+                                  </h3>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <User className="h-4 w-4 mr-1" />
+                                    <span>Customer: {booking.customer.name}</span>
                                   </div>
-                                  <div className="mt-4 md:mt-0 flex flex-col items-end">
-                                    <Badge variant="secondary" className="mb-2">Accepted</Badge>
-                                    <div className="font-semibold">₹{booking.price}</div>
-                                    <div className="flex gap-2 mt-4">
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handleBookingAction(booking.id, "complete")}
-                                      >
-                                        Mark as Complete
-                                      </Button>
-                                    </div>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <Calendar className="h-4 w-4 mr-1" />
+                                    <span>
+                                      {new Date(booking.date).toLocaleDateString()} at {booking.timeSlot}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <MapPin className="h-4 w-4 mr-1" />
+                                    <span>{booking.address}</span>
                                   </div>
                                 </div>
+                                <div className="mt-4 md:mt-0 flex flex-col items-end">
+                                  <div className="font-semibold">₹{booking.totalAmount}</div>
+                                  <Button
+                                    size="sm"
+                                    className="mt-4"
+                                    onClick={() => handleBookingAction(booking._id, "completed")}
+                                    disabled={bookingStatusMutation.isLoading}
+                                  >
+                                    Mark as Complete
+                                  </Button>
+                                </div>
                               </div>
-                            ))}
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="text-center py-8">
                           <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-2" />
                           <h3 className="text-lg font-semibold mb-2">No Upcoming Jobs</h3>
                           <p className="text-gray-600">
-                            You don't have any accepted jobs scheduled at the moment.
+                            You don't have any upcoming jobs at the moment.
                           </p>
                         </div>
                       )}
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 <TabsContent value="completed">
                   <Card>
                     <CardHeader>
@@ -338,72 +376,60 @@ const WorkerDashboard = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {workerBookings.filter(b => b.status === "completed").length > 0 ? (
+                      {completedJobs.length > 0 ? (
                         <div className="space-y-4">
-                          {workerBookings
-                            .filter(b => b.status === "completed")
-                            .map((booking) => (
-                              <div
-                                key={booking.id}
-                                className="border rounded-lg p-4 hover:border-green-200 transition-colors bg-green-50/30"
-                              >
-                                <div className="flex flex-col md:flex-row justify-between">
-                                  <div>
-                                    <h3 className="font-semibold text-lg">
-                                      {findServiceName(booking.serviceId)}
-                                    </h3>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <User className="h-4 w-4 mr-1" />
-                                      <span>Customer: {findCustomerName(booking.customerId)}</span>
-                                    </div>
-                                    <div className="flex items-center text-gray-600 mt-1">
-                                      <Calendar className="h-4 w-4 mr-1" />
-                                      <span>
-                                        {booking.date.toLocaleDateString()}
-                                      </span>
-                                    </div>
-                                    {booking.rating && (
-                                      <div className="flex items-center mt-2">
-                                        <div className="flex items-center text-yellow-500 mr-4">
-                                          {Array.from({ length: 5 }).map((_, i) => (
-                                            <Star
-                                              key={i}
-                                              className={`h-4 w-4 ${
-                                                i < booking.rating
-                                                  ? "fill-yellow-400 stroke-yellow-400"
-                                                  : "stroke-gray-300"
-                                              }`}
-                                            />
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {booking.feedback && (
-                                      <p className="text-sm text-gray-600 mt-1 italic">
-                                        "{booking.feedback}"
-                                      </p>
-                                    )}
+                          {completedJobs.map((booking) => (
+                            <div
+                              key={booking._id}
+                              className="border rounded-lg p-4 hover:border-green-200 transition-colors bg-green-50/30"
+                            >
+                              <div className="flex flex-col md:flex-row justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-lg">
+                                    {booking.service.name}
+                                  </h3>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <User className="h-4 w-4 mr-1" />
+                                    <span>Customer: {booking.customer.name}</span>
                                   </div>
-                                  <div className="mt-4 md:mt-0 flex flex-col items-end">
-                                    <Badge variant="default" className="bg-green-500">Completed</Badge>
-                                    <div className="mt-2 font-semibold">₹{booking.price}</div>
-                                    <Badge
-                                      variant={booking.paymentStatus === "completed" ? "default" : "outline"}
-                                      className={`mt-2 ${booking.paymentStatus === "completed" ? "bg-green-100 text-green-800" : ""}`}
-                                    >
-                                      {booking.paymentStatus === "completed" ? "Paid" : "Payment Pending"}
-                                    </Badge>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <Calendar className="h-4 w-4 mr-1" />
+                                    <span>
+                                      {new Date(booking.date).toLocaleDateString()} at {booking.timeSlot}
+                                    </span>
                                   </div>
+                                  <div className="flex items-center text-gray-600 mt-1">
+                                    <MapPin className="h-4 w-4 mr-1" />
+                                    <span>{booking.address}</span>
+                                  </div>
+                                  {booking.review && (
+                                    <div className="flex items-center mt-2">
+                                      {[1, 2, 3, 4, 5].map((star) => (
+                                        <Star
+                                          key={star}
+                                          className={`h-4 w-4 ${
+                                            star <= booking.review.rating
+                                              ? "fill-yellow-400 stroke-yellow-400"
+                                              : "stroke-gray-300"
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="mt-4 md:mt-0 flex flex-col items-end">
+                                  <div className="font-semibold">₹{booking.totalAmount}</div>
                                 </div>
                               </div>
-                            ))}
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="text-center py-8">
                           <Check className="h-12 w-12 mx-auto text-gray-400 mb-2" />
                           <h3 className="text-lg font-semibold mb-2">No Completed Jobs</h3>
                           <p className="text-gray-600">
-                            You don't have any completed jobs yet.
+                            You haven't completed any jobs yet.
                           </p>
                         </div>
                       )}

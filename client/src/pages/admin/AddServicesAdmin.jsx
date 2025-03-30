@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import {
   Card,
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2, PlusCircle, DollarSign, Tag, Clock, Upload, Image as ImageIcon } from "lucide-react";
+import { Edit, Trash2, PlusCircle, DollarSign, Tag, Clock } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -38,7 +38,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getWorkerServices, createService, updateService, deleteService } from "@/api/workerApi";
 import { getService } from "@/api/servicesApi";
 
-const WorkerManageServices = () => {
+const AddServicesAdmin = () => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const [showAddService, setShowAddService] = useState(false);
@@ -56,10 +56,7 @@ const WorkerManageServices = () => {
       active: true,
       image: "",
     },
-    mode: "onChange",
   });
-
-  const [imagePreview, setImagePreview] = useState("");
 
   // Fetch service categories
   useEffect(() => {
@@ -164,7 +161,6 @@ const WorkerManageServices = () => {
 
   const handleEdit = (service) => {
     setEditingService(service);
-    setImagePreview(service.image || "");
     form.reset({
       name: service.name,
       description: service.description,
@@ -185,7 +181,6 @@ const WorkerManageServices = () => {
   const handleCancel = () => {
     setEditingService(null);
     setShowAddService(false);
-    setImagePreview("");
     form.reset();
   };
 
@@ -329,42 +324,19 @@ const WorkerManageServices = () => {
                   <FormField
                     control={form.control}
                     name="image"
-                    rules={{
-                      required: "Service image is required",
-                      pattern: {
-                        value: /(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png|svg)/,
-                        message: "Please enter a valid image URL (jpg, gif, png, or svg)"
-                      }
-                    }}
+                    rules={{ required: "Service image is required" }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Service Image</FormLabel>
                         <FormControl>
-                          <div className="space-y-4">
-                            <Input
-                              type="url"
-                              {...field}
-                              placeholder="Enter image URL"
-                              onChange={(e) => {
-                                field.onChange(e);
-                                setImagePreview(e.target.value);
-                              }}
-                            />
-                            {imagePreview && (
-                              <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                                <img
-                                  src={imagePreview}
-                                  alt="Preview"
-                                  className="w-full h-full object-cover"
-                                  onError={() => setImagePreview("")}
-                                />
-                              </div>
-                            )}
-                          </div>
+                          <Input
+                            type="url"
+                            {...field}
+                            placeholder="Enter image URL"
+                          />
                         </FormControl>
-                        <FormDescription className="flex items-center gap-2">
-                          <ImageIcon className="h-4 w-4" />
-                          Provide a URL for your service image (jpg, gif, png, or svg)
+                        <FormDescription>
+                          Provide a URL for your service image
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -468,4 +440,4 @@ const WorkerManageServices = () => {
   );
 };
 
-export default WorkerManageServices;
+export default AddSericesAdmin;

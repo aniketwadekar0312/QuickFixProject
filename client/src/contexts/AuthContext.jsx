@@ -123,6 +123,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       const response = await logoutUser();
+      localStorage.removeItem("user");
       if (response.data.status) {
         setCurrentUser(null);
         toast({
