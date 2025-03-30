@@ -33,18 +33,24 @@ import CustomerDetails from "./pages/admin/CustomerDetails";
 import SubmitReview from "./pages/SubmitReview";
 import WorkerReviews from "./pages/worker/WorkerReview";
 import BookingConfirmation from "./components/booking/BookingConfirmation ";
+import ProtectedRoute from "./pages/ProtectedRoute";
+import Categories from "./pages/admin/Categories";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const navigate = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem("user"));
-  
   useEffect(() => {
-    if (!storedUser) {
-      navigate("/login");
+    if (storedUser === null || storedUser === undefined) {
+      console.warn("User data is missing. Checking if it's an error.");
+      // Add a delay to prevent instant redirect (optional)
+      setTimeout(() => {
+        if (!storedUser) navigate("/login");
+      }, 1000);
     }
   }, [storedUser, navigate]);
+  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -60,14 +66,6 @@ const App = () => {
             <Route path="/workers" element={<Workers />} />
             <Route path="/workers/:id" element={<WorkerProfile />} />
             <Route path="/workers/:id/reviews" element={<WorkerReviews />} />
-            <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-            <Route path="/worker/dashboard" element={<WorkerDashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/worker/:id" element={<WorkerDetails />} />
-            <Route path="/admin/customer/:id" element={<CustomerDetails />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/booking/:id" element={<BookingDetails />} />
-            <Route path="/booking/:id/review" element={<SubmitReview />} />
             <Route path="/contact" element={<Contact />} />
             <Route
               path="/how-it-works"
@@ -77,19 +75,45 @@ const App = () => {
                 </Layout>
               }
             />
-            <Route path="/book-service/:id?" element={<BookService />} />
-            <Route path="/resources" element={<Resources />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route
+
+            <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
+              <Route
+                path="/customer/dashboard"
+                element={<CustomerDashboard />}
+              />
+              <Route
               path="/customer/payment-methods"
               element={<CustomerPaymentMethods />}
             />
-            <Route path="/worker/services" element={<WorkerManageServices />} />
-            <Route
-              path="/worker/settings"
-              element={<WorkerAccountSettings />}
-            />
-            <Route path="/worker/earnings" element={<WorkerEarnings />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={["worker"]} />}>
+              <Route path="/worker/dashboard" element={<WorkerDashboard />} />
+              <Route
+                path="/worker/services"
+                element={<WorkerManageServices />}
+              />
+              <Route
+                path="/worker/settings"
+                element={<WorkerAccountSettings />}
+              />
+              <Route path="/worker/earnings" element={<WorkerEarnings />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/category" element={<Categories/>}/>
+              <Route path="/admin/worker/:id" element={<WorkerDetails />} />
+              <Route path="/admin/customer/:id" element={<CustomerDetails />} />
+            </Route>
+
+            <Route path="/about" element={<About />} />
+            <Route path="/booking/:id" element={<BookingDetails />} />
+            <Route path="/booking/:id/review" element={<SubmitReview />} />
+           
+            <Route path="/book-service/:id?" element={<BookService />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/profile" element={<Profile />} />
+            
+
             <Route path="/return" element={<BookingConfirmation />} />
             {/* Catch-all route for undefined paths */}
             <Route path="*" element={<NotFound />} />

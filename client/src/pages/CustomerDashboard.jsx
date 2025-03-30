@@ -377,9 +377,12 @@ const handleBookingClick = (bookingId) => {
                       <CardTitle>My Reviews</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {reviewsLoading ? (
+                      {/* {reviewsLoading ? (
                         <div className="text-center py-8">Loading...</div>
-                      ) : reviewsData?.reviews?.length > 0 ? (
+                      ) : reviewsData?.reviews?.length > 0 ? ( */}
+
+                      {bookings.filter((b) => b.rating).length > 0 ? (
+
                         <div className="space-y-4">
                           {reviewsData.reviews.map((review) => (
                             <div

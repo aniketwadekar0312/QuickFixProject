@@ -40,14 +40,35 @@ const Navbar = () => {
     }
   };
 
-  const menuItems = [
-    { label: "Home", path: "/" },
-    { label: "Services", path: "/services" },
-    { label: "Find Workers", path: "/workers" },
-    { label: "About", path: "/about" },
-    { label: "Contact", path: "/contact" },
-  ];
+  let menuItems = [];
 
+  if(currentUser?.role === "worker"){
+      menuItems.push(
+        { label: "Home", path: "/" },
+        { label: "Services", path: "/services" },
+        { label: "Find Workers", path: "/workers" },
+        { label: "About", path: "/about" },
+        { label: "Contact", path: "/contact" }
+      );
+  }else if(currentUser?.role === "admin"){
+      menuItems.push(
+        { label: "Home", path: "/" },
+        { label: "Categories", path: "/admin/category" },
+        { label: "Services", path: "/services" },
+        { label: "Find Workers", path: "/workers" },
+        { label: "About", path: "/about" },
+        { label: "Contact", path: "/contact" }
+      );
+  }else{
+    menuItems.push(
+      { label: "Home", path: "/" },
+      { label: "Services", path: "/services" },
+      { label: "Find Workers", path: "/workers" },
+      { label: "About", path: "/about" },
+      { label: "Contact", path: "/contact" }
+    );
+  }
+    
   return (
     <nav className="bg-white shadow-md">
       <div className="container mx-auto px-4">
@@ -59,7 +80,7 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            {menuItems.map((item) => (
+            {menuItems.length >0 && menuItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -71,66 +92,73 @@ const Navbar = () => {
 
             {isAuthenticated ? (
               <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 p-0 rounded-full">
-                  {currentUser?.photoUrl ? (
-                    <img
-                      src={currentUser.photoUrl}
-                      alt={currentUser.name}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className="h-6 w-6" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-            
-              <DropdownMenuContent align="end" className="w-56 bg-white shadow-lg rounded-lg">
-                {/* Profile Section */}
-                <div className="flex items-center gap-2 p-3">
-                  <div className="h-12 w-12">
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 p-0 rounded-full"
+                  >
                     {currentUser?.photoUrl ? (
                       <img
                         src={currentUser.photoUrl}
-                        alt="Profile"
-                        className="h-12 w-12 rounded-full object-cover"
+                        alt={currentUser.name}
+                        className="h-10 w-10 rounded-full object-cover"
                       />
                     ) : (
-                      <User className="h-12 w-12 p-2 bg-gray-200 rounded-full" />
+                      <User className="h-6 w-6" />
                     )}
-                  </div>
-                  <div className="flex flex-col">
-                    <p className="font-medium">{currentUser?.name}</p>
-                    <p className="text-sm text-gray-500">{currentUser?.email}</p>
-                  </div>
-                </div>
-            
-                <DropdownMenuSeparator />
-            
-                {/* Dashboard Button */}
-                <DropdownMenuItem asChild>
-                  <Link
-                    to={getDashboardLink()}
-                    className="flex items-center gap-2 py-2 px-3 cursor-pointer"
-                  >
-                    <Settings className="h-5 w-5 text-gray-700" />
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
-            
-                <DropdownMenuSeparator />
-            
-                {/* Logout Button */}
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 py-2 px-3 text-red-600 cursor-pointer"
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-white shadow-lg rounded-lg"
                 >
-                  <LogOut className="h-5 w-5" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
+                  {/* Profile Section */}
+                  <div className="flex items-center gap-2 p-3">
+                    <div className="h-12 w-12">
+                      {currentUser?.photoUrl ? (
+                        <img
+                          src={currentUser.photoUrl}
+                          alt="Profile"
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-12 w-12 p-2 bg-gray-200 rounded-full" />
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="font-medium">{currentUser?.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {currentUser?.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Dashboard Button */}
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={getDashboardLink()}
+                      className="flex items-center gap-2 py-2 px-3 cursor-pointer"
+                    >
+                      <Settings className="h-5 w-5 text-gray-700" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Logout Button */}
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 py-2 px-3 text-red-600 cursor-pointer"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <div className="flex space-x-2">
                 <Button

@@ -24,7 +24,7 @@ const addService = async (req, res) => {
 
 const getService = async (req, res) => {
   try {
-     const services = await Service.find().sort({ createdAt: -1 });
+     const services = await Service.find().sort({ createdAt: -1 }).populate('category');
      return res.status(200).json({ status: true, message: "services fetched successfully", services });
   } catch (error) {
     console.log("Getting error in getService", error);
