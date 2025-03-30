@@ -8,7 +8,7 @@ const { createReview, getWorkerReviews, getReviewsByWorker, getCustomerReviews,u
 router.post('/reviews', verifyUser, createReview);
 
 // Get all reviews for the logged-in worker
-router.get('/worker', verifyUser, getWorkerReviews);
+router.get('/reviews/worker', verifyUser, getWorkerReviews);
 
 // Get all reviews for a specific worker (Public)
 router.get('/worker/:id',getReviewsByWorker);

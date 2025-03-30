@@ -29,7 +29,7 @@ const Services = () => {
     try {
       const res = await getCategory();
 
-      const categoryNames = res.categories.flatMap((category) => category.name);
+      const categoryNames = res.categories.map((category) => category.name);
 
       setCategories(categoryNames);
     } catch (error) {
@@ -59,7 +59,7 @@ const Services = () => {
       service?.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       selectedCategory === "all-categories" ||
-      service?.category === selectedCategory;
+      service?.category?.name === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -95,7 +95,7 @@ const Services = () => {
                     <SelectItem value="all-categories">
                       All Categories
                     </SelectItem>
-                    {categories.length > 0 ? (
+                    {categories?.length > 0 ? (
                       categories.map((category, index) => (
                         <SelectItem key={index} value={category}>
                           {category}
@@ -116,28 +116,28 @@ const Services = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredServices.map((service) => (
               <Card
-                key={service._id}
+                key={service?._id}
                 className="overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="h-48">
                   <img
-                    src={service.image}
-                    alt={service.name}
+                    src={service?.image}
+                    alt={service?.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <CardContent className="p-6">
                   <div className="mb-2">
                     <span className="inline-block bg-brand-100 text-brand-800 text-xs px-2 py-1 rounded">
-                      {service.category}
+                      {service?.category?.name}
                     </span>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{service.name}</h3>
-                  <p className="text-gray-600">{service.description}</p>
+                  <h3 className="text-xl font-semibold mb-2">{service?.name}</h3>
+                  <p className="text-gray-600">{service?.description}</p>
                 </CardContent>
                 <CardFooter className="p-6 pt-0">
                   <Button className="w-full">
-                    <Link to={`/book-service/${service._id}`}>Book Now</Link>
+                    <Link to={`/book-service/${service?._id}`}>Book Now</Link>
                   </Button>
                 </CardFooter>
               </Card>

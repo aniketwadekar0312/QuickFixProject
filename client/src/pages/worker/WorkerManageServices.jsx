@@ -36,6 +36,7 @@ import {
 } from "../../api/authServices";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../contexts/AuthContext";
+import { getWorkerServices } from "../../api/workerApi";
 
 const WorkerManageServices = () => {
   const { toast } = useToast();
@@ -82,7 +83,7 @@ const WorkerManageServices = () => {
   const fetchServices = async () => {
     try {
       const res = await getService();
-      // console.log(res.services);
+      console.log(res.services);
 
       setServices(res.services);
     } catch (error) {
@@ -443,8 +444,8 @@ const WorkerManageServices = () => {
                       <div className="flex flex-col md:flex-row">
                         <div className="w-full md:w-48 h-40 bg-gray-100 flex-shrink-0">
                           <img
-                            src={service.imageUrl || "/placeholder.svg"}
-                            alt={service.name}
+                            src={service?.image || "/placeholder.svg"}
+                            alt={service?.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -461,7 +462,7 @@ const WorkerManageServices = () => {
                               <div className="flex flex-wrap gap-3 mt-3">
                                 <div className="flex items-center text-sm">
                                   <Tag className="h-4 w-4 mr-1 text-gray-500" />
-                                  <span>{service.category}</span>
+                                  <span>{service?.category?.name}</span>
                                 </div>
                                 <div className="flex items-center text-sm">
                                   <DollarSign className="h-4 w-4 mr-1 text-gray-500" />
