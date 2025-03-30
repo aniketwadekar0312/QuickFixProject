@@ -322,11 +322,11 @@ const WorkerDashboard = () => {
                               <div className="flex flex-col md:flex-row justify-between">
                                 <div>
                                   <h3 className="font-semibold text-lg">
-                                    {booking.service.name}
+                                    {booking.service?.name}
                                   </h3>
                                   <div className="flex items-center text-gray-600 mt-1">
                                     <User className="h-4 w-4 mr-1" />
-                                    <span>Customer: {booking.customer.name}</span>
+                                    <span>Customer: {booking.customer?.name}</span>
                                   </div>
                                   <div className="flex items-center text-gray-600 mt-1">
                                     <Calendar className="h-4 w-4 mr-1" />
@@ -386,11 +386,11 @@ const WorkerDashboard = () => {
                               <div className="flex flex-col md:flex-row justify-between">
                                 <div>
                                   <h3 className="font-semibold text-lg">
-                                    {booking.service.name}
+                                    {booking.service?.name}
                                   </h3>
                                   <div className="flex items-center text-gray-600 mt-1">
                                     <User className="h-4 w-4 mr-1" />
-                                    <span>Customer: {booking.customer.name}</span>
+                                    <span>Customer: {booking.customer?.name}</span>
                                   </div>
                                   <div className="flex items-center text-gray-600 mt-1">
                                     <Calendar className="h-4 w-4 mr-1" />
