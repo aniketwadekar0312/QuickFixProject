@@ -19,8 +19,9 @@ export const getUserById = async (id) => {
   return response.data
 };
 
-export const updateUserProfile = async (id,data) => {
-  return await axiosInstance.put(`/v1/user/${id}`, data); 
+export const updateUserProfile = async (id, data) => {
+    const response = await axiosInstance.put(`/v1/user/${id}`, data);
+    return response.data;
 };
 
 // Fetch User Profile

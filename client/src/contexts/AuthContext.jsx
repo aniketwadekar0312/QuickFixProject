@@ -9,7 +9,7 @@ import {
   logoutUser,
 } from "../api/authServices";
 
-const AuthContext = createContext(undefined);
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -27,10 +27,12 @@ export const AuthProvider = ({ children }) => {
           if(response.status && response.user) {
             setCurrentUser(response.user);
           }
-        }else{
+        }
+        if (!storedUser && window.location.pathname !== "/login") {
           setCurrentUser(null);
           navigate("/login");
-        };
+        }
+        
       } catch (error) {
         console.error("Authentication check failed:", error);
         setCurrentUser(null);

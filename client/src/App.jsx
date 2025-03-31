@@ -35,6 +35,7 @@ import WorkerReviews from "./pages/worker/WorkerReview";
 import BookingConfirmation from "./components/booking/BookingConfirmation ";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Categories from "./pages/admin/Categories";
+import OTP from "./components/auth/OTP";
 
 const queryClient = new QueryClient();
 
@@ -45,11 +46,9 @@ const App = () => {
     if (storedUser === null || storedUser === undefined) {
       console.warn("User data is missing. Checking if it's an error.");
       // Add a delay to prevent instant redirect (optional)
-      setTimeout(() => {
         if (!storedUser) navigate("/login");
-      }, 1000);
     }
-  }, [storedUser, navigate]);
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -67,6 +66,7 @@ const App = () => {
             <Route path="/workers/:id" element={<WorkerProfile />} />
             <Route path="/workers/:id/reviews" element={<WorkerReviews />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/otp-verification" element={<OTP/>}/>
             <Route
               path="/how-it-works"
               element={

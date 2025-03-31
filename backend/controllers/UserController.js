@@ -1,5 +1,6 @@
 const User = require("../models/User.js");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 const register = async (req, res) => {
   try {
@@ -9,11 +10,13 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
     // "customer", "worker", "admin"]
+    const salt = await bcrypt.genSalt(10);
+    const hashPassword = await bcrypt.hash(password, salt)
     let data = {
       name,
       email,
       phone,
-      password,
+      password: hashPassword,
       role,
     };
     if (role === "worker") {
@@ -31,7 +34,7 @@ const register = async (req, res) => {
         name,
         email,
         phone,
-        password,
+        password: hashPassword,
         role,
         photoUrl,
         available,
@@ -74,8 +77,9 @@ const login = async (req, res) => {
         .status(400)
         .json({ status: false, message: `User role does not match` });
     }
-
-    const isPasswordMatched = user.password === password;
+   
+    const isPasswordMatched = await bcrypt.compare(password, user.password)
+    
     if (!isPasswordMatched) {
       return res
         .status(400)
@@ -98,6 +102,7 @@ const login = async (req, res) => {
       httpOnly: true, // Prevents JavaScript access for security
       secure: process.env.NODE_ENV === "production", // Ensures secure cookie in HTTPS
       sameSite: "Strict", // Helps against CSRF attacks
+      maxAge: 10 * 24 * 60 * 60 * 1000, // 10 days in milliseconds
     });
 
     return res
@@ -155,17 +160,16 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
-    const { currentPassword, newPassword, confirmPassword, ...updates } = req.body;
-
-    // Prevent email & role updates
-    const restrictedFields = ["email", "role"];
-    restrictedFields.forEach((field) => delete updates[field]);
+    const { currentPassword, newPassword, confirmPassword, name, phone} = req.body;
 
     // Find user by ID
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ status: false, message: "User not found" });
     }
+
+    // Prepare update fields
+    let updates = { name, phone };
 
     // Handle password update if currentPassword is provided
     if (currentPassword) {
@@ -178,10 +182,9 @@ const updateUser = async (req, res) => {
       if (newPassword !== confirmPassword) {
         return res.status(400).json({ status: false, message: "New password and confirm password do not match" });
       }
-
       // Hash new password before updating
-      // const salt = await bcrypt.genSalt(10);
-      // updates.password = await bcrypt.hash(newPassword, salt);
+      const salt = await bcrypt.genSalt(10);
+      updates.password = await bcrypt.hash(newPassword, salt);
     }
 
     // Update user profile
@@ -189,7 +192,7 @@ const updateUser = async (req, res) => {
       userId,
       { $set: updates },
       { new: true, runValidators: true }
-    );
+    ).select("-password");
 
     return res.status(200).json({
       status: true,

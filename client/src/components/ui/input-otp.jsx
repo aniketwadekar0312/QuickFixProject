@@ -25,7 +25,6 @@ InputOTPGroup.displayName = "InputOTPGroup";
 const InputOTPSlot = React.forwardRef(({ index, className, ...props }, ref) => {
   const inputOTPContext = React.useContext(OTPInputContext);
 
-  // Ensure index is within bounds
   if (!inputOTPContext || !inputOTPContext.slots[index]) {
     return null;
   }
@@ -33,24 +32,21 @@ const InputOTPSlot = React.forwardRef(({ index, className, ...props }, ref) => {
   const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index];
 
   return (
-    <div
+    <input
       ref={ref}
+      type="text"
+      maxLength="1"
+      value={char || ""}
       className={cn(
-        "relative flex h-10 w-10 items-center justify-center border-y border-r border-input text-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-        isActive && "z-10 ring-2 ring-ring ring-offset-background",
+        "h-12 w-12 text-xl text-center border border-gray-300 rounded-md focus:border-blue-500 focus:ring focus:ring-blue-300 outline-none",
+        isActive && "z-10 ring-2 ring-blue-500",
         className
       )}
       {...props}
-    >
-      {char}
-      {hasFakeCaret && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
-        </div>
-      )}
-    </div>
+    />
   );
 });
+
 InputOTPSlot.displayName = "InputOTPSlot";
 
 const InputOTPSeparator = React.forwardRef((props, ref) => (

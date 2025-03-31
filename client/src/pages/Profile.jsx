@@ -101,7 +101,7 @@ const Profile = () => {
     try {
       const updatedUser = await updateUserProfile(currentUser._id, data); 
 
-      if (updatedUser.data.status) {
+      if (updatedUser.status) {
         toast({
           title: "Profile updated",
           description: "Your profile has been updated successfully.",
@@ -137,7 +137,7 @@ const Profile = () => {
       const updatedUser = await updateUserProfile(currentUser._id, data);
       console.log(data);
 
-      if (updatedUser.data.status) {
+      if (updatedUser.status) {
         console.log(updatedUser);
         
         toast({
@@ -344,7 +344,10 @@ const Profile = () => {
                       )}
                     />
 
-                    <div className="pt-4 flex justify-end">
+                    <div className="pt-4 flex justify-between">
+                      <Button variant="outline">
+                        Forgot Password
+                      </Button>
                       <Button type="submit" disabled={isChangingPassword}>
                         {isChangingPassword ? (
                           <>

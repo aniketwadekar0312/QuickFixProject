@@ -34,7 +34,7 @@ const LoginForm = () => {
   const form = useForm({
     defaultValues: {
       email: "customer@gmail.com",
-      password: "12345678",
+      password: "Gulshan@3265",
       role: "customer",
     },
   });
