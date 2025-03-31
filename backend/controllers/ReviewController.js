@@ -66,7 +66,7 @@ exports.getWorkerReviews = async (req, res) => {
       .populate('booking', 'service date')
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ status: true, message: 'Worker reviews fetched successfully', data: reviews });
+    res.status(200).json({ status: true, message: 'Worker reviews fetched successfully', reviews });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ status: false, message: 'Server error' });

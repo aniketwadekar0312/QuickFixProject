@@ -213,21 +213,26 @@ const BookService = () => {
       };
 
       if (paymentMethod === "online") {
+       
         const initiatedPaymentRes = await initiatePayment();
+        localStorage.setItem("pendingBooking",JSON.stringify(bookingData));
        
         const res = await verifyPayment({session_id: initiatedPaymentRes.session_id});
-
-        if (res.paymentStatus === "paid") {
-          const response = await createBooking(bookingData);
-          if (response.status) {
-            toast({
-              title: "Booking Successful",
-              description: "Your service has been booked successfully!",
-            });
-            setIsSubmitting(false);
-            navigate("/customer/dashboard");
-          }
-        }
+        
+        
+        // if (res.paymentStatus === "paid") {
+        //   const response = await createBooking(bookingData);
+        //   console.log("booking res",response);
+          
+        //   if (response.status) {
+        //     toast({
+        //       title: "Booking Successful",
+        //       description: "Your service has been booked successfully!",
+        //     });
+        //     setIsSubmitting(false);
+        //     navigate("/customer/dashboard");
+        //   }
+        // }
       } else {
         const response = await createBooking(bookingData);
         if (response.status) {

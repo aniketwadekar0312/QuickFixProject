@@ -85,7 +85,9 @@ const createBooking = async (req, res) => {
       timeSlot,
       address,
       paymentMethod,
+      
     } = req.body;
+    // console.log(req.body);
 
     // Retrieve Payment Intent from Stripe
     // const session = await stripe.checkout.sessions.retrieve(session_id);
@@ -94,13 +96,16 @@ const createBooking = async (req, res) => {
     // }
 
     // Check if service exists
-    const service = await Service.findById(serviceId);
+    console.log(serviceId);
+    
+    const service = await Service.findOne({_id: serviceId});
+    console.log(service);
     if (!service) {
       return res.status(404).json({ status: false, message: "Service not found" });
     }
 
     // Check if worker exists
-    const worker = await User.findById(workerId);
+    const worker = await User.findOne({_id: workerId});
     if (!worker || worker.role !== "worker") {
       return res.status(404).json({ status: false, message: "Worker not found" });
     }
@@ -119,6 +124,7 @@ const createBooking = async (req, res) => {
       },
       totalAmount,
     });
+    console.log("Create booking",booking);
 
     await booking.save();
 

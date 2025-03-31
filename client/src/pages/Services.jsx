@@ -94,7 +94,7 @@ const Services = () => {
                     <SelectItem value="all-categories">
                       All Categories
                     </SelectItem>
-                    {categories.length > 0 ? (
+                    {categories?.length > 0 ? (
                       categories.map((category, index) => (
                         <SelectItem key={index} value={category}>
                           {category}
@@ -115,7 +115,7 @@ const Services = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredServices.map((service, index) => (
               <Card
-                key={index}
+                key={service?._id}
                 className="overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="h-48">
@@ -136,7 +136,7 @@ const Services = () => {
                 </CardContent>
                 <CardFooter className="p-6 pt-0">
                   <Button className="w-full">
-                    <Link to={`/book-service/${service._id}`}>Book Now</Link>
+                    <Link to={`/book-service/${service?._id}`}>Book Now</Link>
                   </Button>
                 </CardFooter>
               </Card>

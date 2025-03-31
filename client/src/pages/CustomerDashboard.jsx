@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockBookings, mockWorkers, mockServices } from "@/data/mockData";
 import { getBookingByCustomerId } from "../api/bookingApi";
 import { getCustomerReviews, updateReview, deleteReview } from "@/api/reviewApi";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -64,15 +65,13 @@ const handleBookingClick = (bookingId) => {
   }, []);
   const formattedDate = (date) => {
     const dateString = new Date(date);
-    const formattedDate = dateString.toLocaleDateString("en-IN", {
+    const formattedDate = dateString.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     });
     return formattedDate;
   };
-
-
 
   // Fetch reviews using React Query
   const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
@@ -377,12 +376,9 @@ const handleBookingClick = (bookingId) => {
                       <CardTitle>My Reviews</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {/* {reviewsLoading ? (
+                      {reviewsLoading ? (
                         <div className="text-center py-8">Loading...</div>
-                      ) : reviewsData?.reviews?.length > 0 ? ( */}
-
-                      {bookings.filter((b) => b.rating).length > 0 ? (
-
+                      ) : reviewsData?.reviews?.length > 0 ? (
                         <div className="space-y-4">
                           {reviewsData.reviews.map((review) => (
                             <div

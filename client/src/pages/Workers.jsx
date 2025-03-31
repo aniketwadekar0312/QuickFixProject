@@ -68,8 +68,8 @@ const Workers = () => {
       worker.location === selectedLocation;
 
     return (
-      matchesSearch && matchesService && matchesLocation
-      // worker.status === "approved"
+      matchesSearch && matchesService && matchesLocation 
+      && worker.status === "approved"
     );
   });
 

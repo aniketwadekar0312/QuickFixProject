@@ -23,7 +23,7 @@ export const verifyPayment = async (sessionId) => {
 // Bookings API functions
 export const createBooking = async ( bookingData, sessionId ) => {
   try {
-    const response = await api.post(`/v1/book/`, bookingData);
+    const response = await api.post(`/v1/book`, bookingData);
     return response.data;
   } catch (error) {
     console.error("Error creating booking:", error);

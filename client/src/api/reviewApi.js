@@ -56,9 +56,9 @@ export const deleteReview = async (reviewId) => {
 };
 
 // Get reviews for a specific worker
-export const getWorkerReviews = async (workerId) => {
+export const getWorkerReviews = async () => {
   try {
-    const response = await api.get(`/v1/reviews/worker/${workerId}`);
+    const response = await api.get(`/v1/reviews/worker`);
     return response.data;
   } catch (error) {
     console.error('Error fetching worker reviews:', error);

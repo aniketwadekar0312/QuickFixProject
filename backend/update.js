@@ -11,9 +11,11 @@ const seedDB = async () => {
 
     console.log("Connected to MongoDB ✅");
 //1) Home Repair
-    const services = await Service.find({category: "67e8ed5a94a75c0b36b2af10"});
-    const id = services.map(s => s._id)
-    console.log(id)
+    // const services = await Service.find({category: "67e8ed5a94a75c0b36b2af10"});
+    // const id = services.map(s => s._id)
+    // console.log(id)
+    const service = await Service.findOne({_id: "67e8f8f0cc29605bede64fd3"});
+        console.log(service);
 
     console.log("Mock services added successfully 🚀");
   } catch (error) {
