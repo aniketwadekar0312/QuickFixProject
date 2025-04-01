@@ -99,15 +99,20 @@ const BookService = () => {
   }, []);
 
   const serviceDetails = id
-    ? services.find((service) => service.id === id)
-    : null;
-  const workerName = selectedWorker
-    ? workers.find((w) => w.id === selectedWorker)?.name
-    : undefined;
+  ? services.find((service) => service._id === id)
+  : null;
+const workerName = selectedWorker
+  ? workers.find((w) => w._id === selectedWorker)?.name
+  : undefined;
 
+  const servicePrice = selectedWorker
+  ? workers.find((w) => w._id === selectedWorker)?.pricing[serviceDetails?.name]
+  : undefined;
+  console.log(serviceDetails)
+console.log(servicePrice)
   useEffect(() => {
     if (serviceDetails) {
-      setSelectedService(serviceDetails.id);
+      setSelectedService(serviceDetails._id);
     }
 
     if (currentUser?.phone) {
@@ -122,8 +127,8 @@ const BookService = () => {
   const initiatePayment = async () => {
     try {
       const res = await intiatePayment({
-        workerName: "Worker1",
-        serviceName: "Service1",
+        workerName: workerName,
+        serviceName: serviceDetails?.name,
       });
       if (res.status) {
         setClientSecret(res.clientSecret);
@@ -340,7 +345,6 @@ const BookService = () => {
                       handleSubmit();
                     }}
                     isSubmitting={isSubmitting}
-                    serviceDetails={serviceDetails}
                   />
                 ) : (
                   // <Elements stripe={stripePromise}>

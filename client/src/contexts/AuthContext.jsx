@@ -7,6 +7,7 @@ import {
   loginUser,
   registerUser,
   logoutUser,
+  generateOtp
 } from "../api/authServices";
 
 const AuthContext = createContext(null);
@@ -76,14 +77,19 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await registerUser(userData);
-      if (response.data.status && response.data.newuser) {
-        toast({
-          title: "Registration successful",
-          description: `Welcome, ${response.data.newuser.name}!`,
-        });
-        navigate(`/login`);
+      const res = await generateOtp({email: userData.email, name: userData.name , OtpType:'verifyAccount'})
+      if(res.status){
+        navigate("/otp-verification", { state: { OtpType: 'verifyAccount', user:userData } });
       }
+      // const response = await registerUser(userData);
+      // if (response.data.status && response.data.newuser) {
+       
+      //   toast({
+      //     title: "Registration successful",
+      //     description: `Welcome, ${response.data.newuser.name}!`,
+      //   });
+      //   navigate(`/login`);
+      // }
     } catch (error) {
       setError(error.response?.data?.message);
       toast({

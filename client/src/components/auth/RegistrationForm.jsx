@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 const RegistrationForm = () => {
   const { register } = useAuth();
@@ -31,15 +33,36 @@ const RegistrationForm = () => {
   const defaultRole = searchParams.get("role") || "customer";
   const [loading, setLoading] = useState(false);
 
-  
+  const registrationSchema = z
+    .object({
+      name: z.string().nonempty("Name is required"),
+      email: z
+        .string()
+        .nonempty("Email is required")
+        .email("Invalid email address"),
+      phone: z
+        .string()
+        .nonempty("Phone number is required")
+        .min(10, "Phone number must be at least 10 digits"),
+      password: z
+        .string()
+        .nonempty("Password is required")
+        .min(8, "Password must be at least 8 characters"),
+      confirmPassword: z.string().nonempty("Confirm Password is required"),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords must match",
+      path: ["confirmPassword"], // Assign error to confirmPassword field
+    });
 
   const form = useForm({
+    resolver: zodResolver(registrationSchema),
     defaultValues: {
-      name: "customer",
-      email: "customer@gmail.com",
-      phone: "9326321022",
-      password: "12345678",
-      confirmPassword: "12345678",
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
       role: "customer",
     },
   });
@@ -61,7 +84,7 @@ const RegistrationForm = () => {
         email: values.email,
         phone: values.phone,
         password: values.password,
-        role: values.role,
+        role: "customer",
       };
       await register(userData);
     } catch (error) {
@@ -71,14 +94,16 @@ const RegistrationForm = () => {
     }
   }
 
-  
   return (
     <div className="max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-6">Create an Account</h2>
       <div className="bg-amber-50 p-4 mb-6 rounded-lg border border-amber-200">
         <p className="text-sm text-amber-800">
-          Looking to register as a service provider? 
-          <Link to="/worker-register" className="font-semibold ml-1 text-blue-600 hover:underline">
+          Looking to register as a service provider?
+          <Link
+            to="/worker-register"
+            className="font-semibold ml-1 text-blue-600 hover:underline"
+          >
             Click here to sign up
           </Link>
         </p>
@@ -138,22 +163,24 @@ const RegistrationForm = () => {
           <FormField
             control={form.control}
             name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Create a password"
-                    type="password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Password must be at least 8 characters long.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              return (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Create a password"
+                      type="password"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Password must be at least 8 characters long.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
 
           <FormField
@@ -212,9 +239,7 @@ const RegistrationForm = () => {
       <div className="mt-4 text-center text-sm">
         <p>
           Already have an account?{" "}
-          <Link to="/login"
-            className="text-brand-600 hover:underline"
-          >
+          <Link to="/login" className="text-brand-600 hover:underline">
             Log in
           </Link>
         </p>

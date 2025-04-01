@@ -19,7 +19,6 @@ const BookingSummary = ({
   const serviceDetails = selectedService 
     ? services.find(s => s._id === selectedService) 
     : null;
-      
   // Get selected payment method details
   const selectedPaymentMethod = selectedPaymentId
     ? paymentMethods.find(method => method.id === selectedPaymentId)

@@ -33,3 +33,13 @@ export const getUserProfile = async () => {
 export const logoutUser = async () => {
   return await axiosInstance.post("/v1/logout")
 };
+
+export const generateOtp = async(data) => {
+  const res = await axiosInstance.post("/v1/otp", data);
+  return res.data
+}
+
+export const verifyOtp = async(data) => {
+  const res = await axiosInstance.post("/v1/verify-otp", data);
+  return res.data
+}

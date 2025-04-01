@@ -3,12 +3,23 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogTrigger,
+} from "../components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, UserCheck, Loader2, ArrowLeft } from "lucide-react";
+import { User, Loader2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { generateOtp } from "../api/authServices";
 
 import {
   Form,
@@ -33,10 +44,11 @@ const profileSchema = z.object({
 });
 
 const Profile = () => {
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated, setCurrentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Redirect if not authenticated
@@ -51,6 +63,7 @@ const Profile = () => {
     defaultValues: {
       name: currentUser?.name || "",
       phone: currentUser?.phone || "",
+      photoUrl: currentUser?.photoUrl || "",
     },
     mode: "onBlur",
   });
@@ -61,6 +74,7 @@ const Profile = () => {
       profileForm.reset({
         name: currentUser.name,
         phone: currentUser.phone || "",
+        photoUrl: currentUser?.photoUrl || "",
       });
     }
   }, [currentUser, profileForm]);
@@ -97,11 +111,12 @@ const Profile = () => {
   // Handle profile update
   const onProfileSubmit = async (data) => {
     setIsUpdating(true);
-
     try {
-      const updatedUser = await updateUserProfile(currentUser._id, data); 
+      const updatedUser = await updateUserProfile(currentUser._id, data);
 
       if (updatedUser.status) {
+        setCurrentUser((prev) => ({ ...prev, photoUrl: data.photoUrl })); // Update the user photo in state
+        setIsDialogOpen(false);
         toast({
           title: "Profile updated",
           description: "Your profile has been updated successfully.",
@@ -135,11 +150,10 @@ const Profile = () => {
 
     try {
       const updatedUser = await updateUserProfile(currentUser._id, data);
-      console.log(data);
 
       if (updatedUser.status) {
         console.log(updatedUser);
-        
+
         toast({
           title: "Password updated",
           description: "Your password has been updated successfully.",
@@ -167,6 +181,34 @@ const Profile = () => {
     });
   };
 
+  const handleForgotPassword = async () => {
+    try {
+      const data = {
+        email: currentUser.email,
+        name: currentUser.name,
+        OtpType: "resetPassword",
+      };
+      setIsUpdating(true);
+      const res = await generateOtp(data);
+      if (res.status) {
+        toast({
+          title: "sucess",
+          description: "OTP is genrated successfully.",
+        });
+        navigate("/otp-verification", { state: { OtpType: data.OtpType, user: null } });
+      }
+    } catch (error) {
+      toast({
+        title: "failed",
+        description: "Failed to genrate OTP. Please try again.",
+        variant: "destructive",
+      });
+      console.log("error in generating otp", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (!isAuthenticated || !currentUser) {
     return null;
   }
@@ -189,6 +231,22 @@ const Profile = () => {
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
+                <div className="flex justify-end items-center">
+                  <Button
+                    variant="outline"
+                    onClick={handleForgotPassword}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        processing...
+                      </>
+                    ) : (
+                      "Forgot Password"
+                    )}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <Form {...profileForm}>
@@ -207,9 +265,61 @@ const Profile = () => {
                             <User className="h-16 w-16" />
                           </AvatarFallback>
                         </Avatar>
-                        <Button variant="outline" size="sm" type="button">
-                          Change Photo
-                        </Button>
+                        <Dialog
+                          open={isDialogOpen}
+                          onOpenChange={setIsDialogOpen}
+                        >
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" type="button">
+                              Change Photo
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogTitle>Change Profile Photo</DialogTitle>
+                            <DialogHeader>
+                              <div className="space-y-4">
+                                <FormField
+                                  control={profileForm.control}
+                                  name="photoUrl"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Image url</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                {profileForm.watch("photoUrl") && (
+                                  <Avatar className="h-20 w-20">
+                                    <AvatarImage
+                                      src={profileForm.watch("photoUrl")}
+                                      alt={currentUser.name}
+                                    />
+                                    <AvatarFallback className="text-4xl">
+                                      <User className="h-16 w-16" />
+                                    </AvatarFallback>
+                                  </Avatar>
+                                )}
+                              </div>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button variant="outline">Cancel</Button>
+                                </DialogClose>
+                                <Button
+                                  onClick={profileForm.handleSubmit(
+                                    onProfileSubmit
+                                  )}
+                                >
+                                  Save
+                                </Button>
+                              </DialogFooter>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
 
                       <div className="flex-1 space-y-4">
@@ -344,10 +454,7 @@ const Profile = () => {
                       )}
                     />
 
-                    <div className="pt-4 flex justify-between">
-                      <Button variant="outline">
-                        Forgot Password
-                      </Button>
+                    <div className="pt-4 flex justify-end">
                       <Button type="submit" disabled={isChangingPassword}>
                         {isChangingPassword ? (
                           <>

@@ -116,7 +116,6 @@ const handleBookingClick = (bookingId) => {
       }
     });
   };
-
   return (
     <Layout>
       <div className="bg-gray-50 py-12">

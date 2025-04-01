@@ -36,6 +36,7 @@ import BookingConfirmation from "./components/booking/BookingConfirmation ";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Categories from "./pages/admin/Categories";
 import OTP from "./components/auth/OTP";
+import ForgotPassword from "./components/auth/ForgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => {
             <Route path="/workers/:id/reviews" element={<WorkerReviews />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/otp-verification" element={<OTP/>}/>
+            <Route path="/create-password" element={<ForgotPassword/>}/>
             <Route
               path="/how-it-works"
               element={

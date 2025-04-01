@@ -33,7 +33,7 @@ const LoginForm = () => {
 
   const form = useForm({
     defaultValues: {
-      email: "customer@gmail.com",
+      email: "gulsanvarma2589@gmail.com",
       password: "Gulshan@3265",
       role: "customer",
     },
@@ -135,7 +135,7 @@ const LoginForm = () => {
           Don't have an account?{" "}
           <a
             href="#"
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/register")}
             className="text-brand-600 hover:underline"
           >
             Register now

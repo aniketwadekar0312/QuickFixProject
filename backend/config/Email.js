@@ -1,6 +1,11 @@
 const nodemailer = require("nodemailer");
 
-const sendEmail = async (Name, toEmail, OTP, isforgotPassword) => {
+const sendEmail = async (
+  Name,
+  toEmail,
+  OTP,
+  OtpType
+) => {
   const emailTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,65 +16,90 @@ const sendEmail = async (Name, toEmail, OTP, isforgotPassword) => {
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
-            background: #f4f4f4; /* Light grey background */
+            padding: 4px;
+            background: #f4f7fc;
+            /* Light blue-gray background */
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
         }
+
         .container {
             width: 100%;
             max-width: 600px;
-            background: linear-gradient(to right, #4338ca, #4f46e5); /* Gradient inside the container */
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            color: white; /* Text color for contrast */
-        }
-        .header {
-            padding: 0px 0;
             background: white;
+            /* White background for the card */
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            padding: 20px;
         }
+
+        .header {
+            padding: 15px 0;
+            background: #4338CA;
+            /* Deep blue */
+            border-radius: 8px 8px 0 0;
+        }
+
         .logo {
-            
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 5px;
             font-size: 1.8rem;
             font-weight: 700;
-            color: #4338ca;
+            color: white;
         }
+
         .content {
-            margin: 10px 0;
+            margin: 20px 0;
+            color: #333;
+            /* Darker text for readability */
         }
+
         .otp-code {
             font-size: 24px;
             font-weight: bold;
-            background: white;
-            color: #4CAF50;
-            padding: 10px;
+            background: #1e40af;
+            /* Deep blue background */
+            color: white;
+            padding: 12px 20px;
             display: inline-block;
             border-radius: 5px;
+            letter-spacing: 3px;
         }
+
         .footer {
             font-size: 12px;
-            color: #ddd;
+            color: #666;
             margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+                margin: 5px;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <div class="logo">QuikFix</div>
         </div>
         <div class="content">
-            <h2>Secure OTP Verification</h2>
-            <p>${Name},</p>
-            <p>Your OTP code is</p>
+            <h2 style="color: #4338CA;">Secure OTP Verification</h2>
+            <p style="font-size: 16px;">Hello <strong>${Name}</strong>,</p>
+            <p>Your OTP code is:</p>
             <p class="otp-code">${OTP}</p>
-            <p>This OTP is valid for 5 min</p>
+            <p style="color: #555;">This OTP is valid for 5 minutes.</p>
             <p>Please use this code to complete your verification.</p>
         </div>
         <div class="footer">
@@ -82,20 +112,20 @@ const sendEmail = async (Name, toEmail, OTP, isforgotPassword) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "gulsanvarma2589@gmail.com", // Your Gmail email
-      pass: "ouer chxa wreq kgec", // Use the generated App Password
+      user: "aniketwadekar0312@gmail.com", // Your Gmail email
+      pass: "vjqo vewj fzoy jufg", // Use the generated App Password
     },
   });
 
   let text = "";
-  if (isforgotPassword) {
-    text = `Hi, ${Name} Please Enter the belwo OTP on QuikFix website to reset your Password`;
-  } else {
-    text = `Hi, ${Name} Welcome to QuickFix`;
+  if (OtpType === "resetPassword") {
+    text = `Hi ${Name},\n\nPlease use the OTP below on the QuikFix website to reset your password:\n\nOTP: ${OTP}`;
+  } else if (OtpType === "verifyAccount") {
+    text = `Hi ${Name},\n\nWelcome to QuickFix! Your OTP for account verification is:\n\nOTP: ${OTP}`;
   }
 
   const mailOptions = {
-    from: '"Quik Fix" gulsanvarma2589@gmail.com',
+    from: '"QuickFix" aniketwadekar0312@gmail.com',
     to: toEmail,
     subject: "Your OTP Code for Verification",
     text: text,
@@ -105,9 +135,10 @@ const sendEmail = async (Name, toEmail, OTP, isforgotPassword) => {
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent: %s", info.messageId);
+    return true;
   } catch (error) {
     console.error("Error sending email:", error);
+    return false;
   }
 };
-
 module.exports = sendEmail;

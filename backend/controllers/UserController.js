@@ -1,6 +1,9 @@
 const User = require("../models/User.js");
+const OTP = require("../models/OTP.js");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const sendEmail = require("../config/Email.js");
+const crypto = require("crypto");
 
 const register = async (req, res) => {
   try {
@@ -11,11 +14,12 @@ const register = async (req, res) => {
     }
     // "customer", "worker", "admin"]
     const salt = await bcrypt.genSalt(10);
-    const hashPassword = await bcrypt.hash(password, salt)
+    const hashPassword = await bcrypt.hash(password, salt);
     let data = {
       name,
       email,
       phone,
+      verified: true,
       password: hashPassword,
       role,
     };
@@ -36,6 +40,7 @@ const register = async (req, res) => {
         phone,
         password: hashPassword,
         role,
+        verified: true,
         photoUrl,
         available,
         services,
@@ -77,9 +82,9 @@ const login = async (req, res) => {
         .status(400)
         .json({ status: false, message: `User role does not match` });
     }
-   
-    const isPasswordMatched = await bcrypt.compare(password, user.password)
-    
+
+    const isPasswordMatched = await bcrypt.compare(password, user.password);
+
     if (!isPasswordMatched) {
       return res
         .status(400)
@@ -96,22 +101,19 @@ const login = async (req, res) => {
       expiresIn: "10d",
     });
 
-
-     // Set token in HTTP-only cookie
-     res.cookie("token", token, {
+    // Set token in HTTP-only cookie
+    res.cookie("token", token, {
       httpOnly: true, // Prevents JavaScript access for security
       secure: process.env.NODE_ENV === "production", // Ensures secure cookie in HTTPS
       sameSite: "Strict", // Helps against CSRF attacks
       maxAge: 10 * 24 * 60 * 60 * 1000, // 10 days in milliseconds
     });
 
-    return res
-      .status(200)
-      .json({
-        status: true,
-        message: `${role} login successfully.`,
-        user,
-      });
+    return res.status(200).json({
+      status: true,
+      message: `${role} login successfully.`,
+      user,
+    });
   } catch (error) {
     console.log("Getting error in login", error);
     return res.status(500).json({ status: false, message: error.message });
@@ -131,7 +133,7 @@ const Logout = async (req, res) => {
     console.log("Getting error in logout", error);
     return res.status(500).json({ status: false, message: error.message });
   }
-}
+};
 
 const getUsers = async (req, res) => {
   try {
@@ -149,8 +151,10 @@ const getUserById = async (req, res) => {
   try {
     // Fetch only workers
     const userId = req.params.id;
-    const user = await User.findOne({_id: userId});
-    return res.status(200).json({status: true, message: "User fetched successfully.",user});
+    const user = await User.findOne({ _id: userId });
+    return res
+      .status(200)
+      .json({ status: true, message: "User fetched successfully.", user });
   } catch (error) {
     console.error("Error fetching user:", error);
     return res.status(500).json({ status: false, message: error.message });
@@ -160,7 +164,14 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
-    const { currentPassword, newPassword, confirmPassword, name, phone} = req.body;
+    const {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+      name,
+      phone,
+      photoUrl,
+    } = req.body;
 
     // Find user by ID
     const user = await User.findById(userId);
@@ -169,18 +180,23 @@ const updateUser = async (req, res) => {
     }
 
     // Prepare update fields
-    let updates = { name, phone };
+    let updates = { name, phone, photoUrl };
 
     // Handle password update if currentPassword is provided
     if (currentPassword) {
-      const isMatch=currentPassword===user.password;
-       
+      const isMatch = currentPassword === user.password;
+
       if (!isMatch) {
-        return res.status(400).json({ status: false, message: "Current password is incorrect" });
+        return res
+          .status(400)
+          .json({ status: false, message: "Current password is incorrect" });
       }
 
       if (newPassword !== confirmPassword) {
-        return res.status(400).json({ status: false, message: "New password and confirm password do not match" });
+        return res.status(400).json({
+          status: false,
+          message: "New password and confirm password do not match",
+        });
       }
       // Hash new password before updating
       const salt = await bcrypt.genSalt(10);
@@ -205,5 +221,97 @@ const updateUser = async (req, res) => {
   }
 };
 
+const generateOTPAndSendEmail = async (req, res) => {
+  try {
+    const { OtpType, email, name } = req.body;
 
-module.exports = { register, login, Logout, getUsers, updateUser, getUserById };
+    if (!OtpType || !email || !name) {
+      return res.status(400).json({
+        status: false,
+        message: "Name, email, and OTP type are required.",
+      });
+    }
+
+    // If OTP is for account verification, check if the user already exists
+    if (OtpType === "verifyAccount") {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(409).json({
+          status: false,
+          message: "User already exists.",
+        });
+      }
+    }
+
+    // Generate a 6-digit random OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    // Send OTP email based on the OTP type
+    const emailSent = await sendEmail(name, email, otp, OtpType);
+    if (!emailSent) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to send OTP email.",
+      });
+    }
+
+    // Save OTP in the database
+    await OTP.create({ name, email, OTP: otp });
+
+    return res.status(200).json({
+      status: true,
+      message: "OTP generated successfully.",
+    });
+
+  } catch (error) {
+    console.error("Error in generateOTPAndSendEmail:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Server error. Please try again later.",
+    });
+  }
+};
+
+const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    // Validate input
+    if (!email || !otp) {
+      return res
+        .status(400)
+        .json({ message: "User ID, email, and OTP are required" });
+    }
+
+    // Find the OTP in the database
+    const otpRecord = await OTP.findOne({ email, OTP: otp });
+
+    if (!otpRecord) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid or expired OTP" });
+    }
+
+    // OTP is valid, delete it after verification (optional)
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    return res.status(200).json({
+      status: true,
+      message: "OTP Verified successfully",
+    });
+  } catch (error) {
+    console.error("Error in verifyOTP:", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  Logout,
+  getUsers,
+  updateUser,
+  getUserById,
+  generateOTPAndSendEmail,
+  verifyOTP,
+};

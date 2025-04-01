@@ -39,8 +39,7 @@ const Services = () => {
   const fetchServices = async () => {
     try {
       const res = await getService();
-      console.log(res.services);
-      
+  
       setServices(res.services);
     } catch (error) {
       console.log("error fetching Services", error);
