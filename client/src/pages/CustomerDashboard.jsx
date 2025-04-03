@@ -171,7 +171,7 @@ const handleBookingClick = (bookingId) => {
                       Find Workers
                     </Link>
                   </Button>
-                  <Button
+                  {/* <Button
                     asChild
                     variant="outline"
                     className="w-full justify-start"
@@ -180,7 +180,7 @@ const handleBookingClick = (bookingId) => {
                       <CreditCard className="h-4 w-4 mr-2" />
                       Payment Methods
                     </Link>
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </div>
@@ -202,7 +202,9 @@ const handleBookingClick = (bookingId) => {
                       <CardTitle>Current Bookings</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {bookings.length > 0 ? (
+                      {bookings.length > 0 &&
+                      bookings?.filter((b) => b?.status === "pending")
+                        .length > 0 ? (
                         <div className="space-y-4">
                           {bookings.map((booking, index) => (
                             <div
@@ -389,7 +391,7 @@ const handleBookingClick = (bookingId) => {
                                   <div className="flex justify-between items-start">
                                     <div>
                                       <h3 className="font-semibold">
-                                        {review.booking.service.name}
+                                        {review?.booking?.service?.name || ""}
                                       </h3>
                                       <p className="text-gray-600">
                                         Service Provider: {review.worker.name}

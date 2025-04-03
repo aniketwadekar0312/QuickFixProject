@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { verifyPayment,createBooking } from "../../api/bookingApi";
+import { verifyPayment, createBooking } from "../../api/bookingApi";
 // import axios from "";
 
 const BookingConfirmation = () => {
@@ -28,20 +28,19 @@ const BookingConfirmation = () => {
       }
 
       const bookingData = JSON.parse(storedBookingData);
-    //   console.log("booking conform data",bookingData);
+      //   console.log("booking conform data",bookingData);
 
-      
       try {
         const res = await verifyPayment({ session_id: session_id });
         if (res.paymentStatus === "paid") {
-        
-          const response = await createBooking(bookingData);
-
-          toast({
-            title: "Booking confirmed successfully!",
-            description: `your service is booked`,
-          });
-          navigate("/customer/dashboard");
+          const response = await createBooking({...bookingData, sessionId: session_id});
+          if (response.status) {
+            toast({
+              title: "Booking confirmed successfully!",
+              description: `your service is booked`,
+            });
+            navigate("/customer/dashboard");
+          }
         } else {
           setError("Booking failed. ");
         }

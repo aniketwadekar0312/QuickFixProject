@@ -79,7 +79,7 @@ const Resources = () => {
           <ResourceCard 
             icon={<HelpCircle className="h-8 w-8" />}
             title="FAQs"
-            description="Answers to commonly asked questions about working with HomeServe."
+            description="Answers to commonly asked questions about working with QuickFix."
             linkText="View FAQs"
             linkUrl="#"
             color="bg-teal-50"

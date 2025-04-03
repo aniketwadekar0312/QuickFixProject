@@ -31,9 +31,9 @@ export const updateBookingStatus = async (bookingId, status) => {
 };
 
 // Get worker's profile
-export const getWorkerProfile = async () => {
+export const getWorkerProfile = async (id) => {
   try {
-    const response = await axios.get("/v1/worker/profile");
+    const response = await axios.get(`/v1/worker/profile/${id}`);
     return response.data;
   } catch (error) {
     throw error;
@@ -89,3 +89,21 @@ export const deleteService = async (serviceId) => {
     throw error;
   }
 }; 
+
+export const getWorkerReviewAndUpdate = async (workerId) => {
+  try {
+    const response = await axios.get(`/v1/worker/review/${workerId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}; 
+
+export const featuredWorker = async() => {
+  try {
+    const response = await axios.get(`/v1/worker/featured-worker`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}

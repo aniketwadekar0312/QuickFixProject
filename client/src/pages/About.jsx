@@ -10,7 +10,7 @@ const About = () => {
         {/* Hero Section */}
         <div className="bg-brand-600 text-white">
           <div className="container mx-auto px-4 py-16 text-center">
-            <h1 className="text-4xl font-bold mb-4">About HomeServe</h1>
+            <h1 className="text-4xl font-bold mb-4">About QuickFix</h1>
             <p className="text-xl max-w-3xl mx-auto">
               Connecting quality service providers with customers since 2023, we're on a mission
               to transform how home services are discovered and delivered.
@@ -24,7 +24,7 @@ const About = () => {
             <h2 className="text-3xl font-bold mb-6 text-center">Our Story</h2>
             <div className="bg-white rounded-lg shadow-md p-8">
               <p className="text-gray-700 mb-4">
-                HomeServe was founded with a simple idea: make it easier for people to find reliable 
+              QuickFix was founded with a simple idea: make it easier for people to find reliable 
                 home service professionals. What started as a small platform connecting a few local 
                 contractors with homeowners has grown into a comprehensive service marketplace.
               </p>
@@ -35,7 +35,7 @@ const About = () => {
                 service providers and customers.
               </p>
               <p className="text-gray-700">
-                Today, HomeServe helps thousands of customers find the right professionals for their 
+                Today, QuickFix helps thousands of customers find the right professionals for their 
                 needs while providing service providers with opportunities to grow their businesses. 
                 Our platform focuses on quality, reliability, and transparency to ensure positive 
                 experiences for everyone.
@@ -97,7 +97,7 @@ const About = () => {
 
         {/* Call to Action */}
         <div className="container mx-auto px-4 py-16 text-center">
-          <h2 className="text-3xl font-bold mb-6">Ready to Experience HomeServe?</h2>
+          <h2 className="text-3xl font-bold mb-6">Ready to Experience QuickFix?</h2>
           <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
             Join thousands of satisfied customers who have found reliable service providers for their home needs.
           </p>

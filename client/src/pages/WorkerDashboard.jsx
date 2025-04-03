@@ -22,7 +22,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import PendingRequests from "@/components/booking/PendingRequests";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getWorkerBookings,
@@ -30,6 +30,7 @@ import {
   updateBookingStatus,
   getWorkerProfile,
   getWorkerEarnings,
+  getWorkerReviewAndUpdate,
 } from "@/api/workerApi";
 import { getWorkerReviews } from "../api/reviewApi";
 
@@ -38,30 +39,32 @@ const WorkerDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [reviews, setReviews] = useState([]);
+  const [rating, setRating] = useState();
 
+  const workerId = currentUser?._id;
   // Fetch worker data using React Query
   const { data: workerProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ["workerProfile"],
-    queryFn: getWorkerProfile,
+    queryKey: ["workerProfile", workerId],
+    queryFn: getWorkerProfile(workerId),
     enabled: !!currentUser,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,  // Reduce stale time
+  cacheTime: 10 * 60 * 1000,
   });
 
   const { data: bookingsData, isLoading: bookingsLoading } = useQuery({
     queryKey: ["workerBookings"],
     queryFn: getWorkerBookings,
     enabled: !!currentUser,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,  // Reduce stale time
+    cacheTime: 10 * 60 * 1000,
   });
 
   const { data: earningsData, isLoading: earningsLoading } = useQuery({
     queryKey: ["workerEarnings"],
     queryFn: getWorkerEarnings,
     enabled: !!currentUser,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,  // Reduce stale time
+  cacheTime: 10 * 60 * 1000,
   });
 
   // Mutations
@@ -101,7 +104,6 @@ const WorkerDashboard = () => {
       });
     },
   });
-
   // State
   const [isAvailable, setIsAvailable] = useState(
     workerProfile?.isAvailable ?? true
@@ -121,16 +123,29 @@ const WorkerDashboard = () => {
     availabilityMutation.mutate(newAvailability);
   };
 
-  const getReviews = async () => {
-    const res = await getWorkerReviews();
-    console.log(res);
-
-    setReviews(res.review);
-  };
-
   useEffect(() => {
-    getReviews();
+    const fetchData = async () => {
+      try {
+        const [ratingRes, reviewsRes] = await Promise.all([
+          getWorkerReviewAndUpdate(currentUser._id),
+          getWorkerReviews(),
+        ]);
+  
+        if (ratingRes.status) {
+          setRating(ratingRes.averageRating);
+        }
+  
+        if (reviewsRes?.reviews) {
+          setReviews(reviewsRes.reviews);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+  
+    fetchData();
   }, []);
+  
 
   // Handle booking action
   const handleBookingAction = async (bookingId, status) => {
@@ -138,12 +153,18 @@ const WorkerDashboard = () => {
   };
 
   // Filter bookings by status
-  const pendingRequests =
-    bookingsData?.data?.filter((b) => b.status === "pending") || [];
-  const upcomingJobs =
-    bookingsData?.data?.filter((b) => b.status === "accepted") || [];
-  const completedJobs =
-    bookingsData?.data?.filter((b) => b.status === "completed") || [];
+  const pendingRequests = useMemo(() => 
+    bookingsData?.data?.filter((b) => b.status === "pending") || [], [bookingsData]
+  );
+  
+  const upcomingJobs = useMemo(() => 
+    bookingsData?.data?.filter((b) => b.status === "accepted") || [], [bookingsData]
+  );
+  
+  const completedJobs = useMemo(() => 
+    bookingsData?.data?.filter((b) => b.status === "completed") || [], [bookingsData]
+  );
+  
 
   if (profileLoading || bookingsLoading || earningsLoading) {
     return (
@@ -154,7 +175,83 @@ const WorkerDashboard = () => {
       </Layout>
     );
   }
-
+  
+  const renderCompletedJobs = () => {
+    if (!completedJobs.length) {
+      return (
+        <div className="text-center py-8">
+          <Check className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+          <h3 className="text-lg font-semibold mb-2">No Completed Jobs</h3>
+          <p className="text-gray-600">You haven't completed any jobs yet.</p>
+        </div>
+      );
+    }
+  
+    return (
+      <div className="space-y-4">
+        {completedJobs.map((booking) => {
+          const bookingReview = reviews?.find(
+            (review) => review.booking._id === booking._id
+          );
+  
+          return (
+            <div
+              key={booking._id}
+              className="border rounded-lg p-4 hover:border-green-200 transition-colors bg-green-50/30"
+            >
+              <div className="flex flex-col md:flex-row justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {booking.service?.name}
+                  </h3>
+                  <div className="flex items-center text-gray-600 mt-1">
+                    <User className="h-4 w-4 mr-1" />
+                    <span>Customer: {booking.customer?.name}</span>
+                  </div>
+                  <div className="flex items-center text-gray-600 mt-1">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    <span>
+                      {new Date(booking.date).toLocaleDateString()} at{" "}
+                      {booking.timeSlot}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-gray-600 mt-1">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span>{booking.address}</span>
+                  </div>
+  
+                  {bookingReview && (
+                    <div className="mt-4">
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-4 w-4 ${
+                              star <= bookingReview.rating
+                                ? "fill-yellow-400 stroke-yellow-400"
+                                : "stroke-gray-300"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="mt-2 text-gray-700">{bookingReview.comment}</p>
+                      <p className="text-sm text-gray-500">
+                        - {bookingReview.customer.name}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 md:mt-0 flex flex-col items-end">
+                  <div className="font-semibold">₹{booking.totalAmount}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+  
   return (
     <Layout>
       <div className="bg-gray-50 py-12">
@@ -186,15 +283,13 @@ const WorkerDashboard = () => {
                       <Star
                         key={star}
                         className={`h-4 w-4 ${
-                          star <= (workerProfile?.data?.rating || 0)
+                          star <= (rating || 0)
                             ? "fill-yellow-400 stroke-yellow-400"
                             : "stroke-gray-300"
                         }`}
                       />
                     ))}
-                    <span className="ml-1 text-sm">
-                      {workerProfile?.data?.rating?.toFixed(1) || "0.0"}
-                    </span>
+                    <span className="ml-1 text-sm">{rating || "0.0"}</span>
                   </div>
                   <div className="mt-4 w-full">
                     <div className="flex items-center justify-between mb-4">
@@ -242,7 +337,7 @@ const WorkerDashboard = () => {
                       Manage Services
                     </Link>
                   </Button>
-                  <Button
+                  {/* <Button
                     asChild
                     variant="outline"
                     className="w-full justify-start"
@@ -251,7 +346,7 @@ const WorkerDashboard = () => {
                       <Settings className="h-4 w-4 mr-2" />
                       Account Settings
                     </Link>
-                  </Button>
+                  </Button> */}
                   <Button
                     asChild
                     variant="outline"
@@ -487,86 +582,7 @@ const WorkerDashboard = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {completedJobs.length > 0 ? (
-                        <div className="space-y-4">
-                          {completedJobs.map((booking) => (
-                            <div
-                              key={booking._id}
-                              className="border rounded-lg p-4 hover:border-green-200 transition-colors bg-green-50/30"
-                            >
-                              <div className="flex flex-col md:flex-row justify-between">
-                                <div>
-                                  <h3 className="font-semibold text-lg">
-                                    {booking.service?.name}
-                                  </h3>
-                                  <div className="flex items-center text-gray-600 mt-1">
-                                    <User className="h-4 w-4 mr-1" />
-                                    <span>
-                                      Customer: {booking.customer?.name}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center text-gray-600 mt-1">
-                                    <Calendar className="h-4 w-4 mr-1" />
-                                    <span>
-                                      {new Date(
-                                        booking.date
-                                      ).toLocaleDateString()}{" "}
-                                      at {booking.timeSlot}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center text-gray-600 mt-1">
-                                    <MapPin className="h-4 w-4 mr-1" />
-                                    <span>{booking.address}</span>
-                                  </div>
-                                  {reviews &&
-                                    reviews.map((review) => (
-                                      <div key={review._id} className="mt-4">
-                                        {/* Rating Stars */}
-                                        <div className="flex items-center">
-                                          {[1, 2, 3, 4, 5].map((star) => (
-                                            <Star
-                                              key={star}
-                                              className={`h-4 w-4 ${
-                                                star <= review.rating
-                                                  ? "fill-yellow-400 stroke-yellow-400"
-                                                  : "stroke-gray-300"
-                                              }`}
-                                            />
-                                          ))}
-                                        </div>
-
-                                        {/* Review Comment */}
-                                        <p className="mt-2 text-gray-700">
-                                          {review.comment}
-                                        </p>
-
-                                        {/* Customer Name (optional) */}
-                                        <p className="text-sm text-gray-500">
-                                          - {review.customer.name}
-                                        </p>
-                                      </div>
-                                    ))}
-                                </div>
-                                <div className="mt-4 md:mt-0 flex flex-col items-end">
-                                  <div className="font-semibold">
-                                    ₹{booking.totalAmount}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <Check className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                          <h3 className="text-lg font-semibold mb-2">
-                            No Completed Jobs
-                          </h3>
-                          <p className="text-gray-600">
-                            You haven't completed any jobs yet.
-                          </p>
-                        </div>
-                      )}
+                      {renderCompletedJobs()}
                     </CardContent>
                   </Card>
                 </TabsContent>

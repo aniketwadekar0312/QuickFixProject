@@ -34,7 +34,9 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   async(error) => {
-    if (error.response?.status === 401) {
+    // Only redirect for authentication errors, not all errors
+    if (error.response?.status === 401 && 
+        !window.location.pathname.includes('/login')) {
       console.log("Unauthorized! Redirecting to login...");
       await axiosInstance.post("/v1/logout");
       localStorage.removeItem("user");

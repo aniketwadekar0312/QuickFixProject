@@ -7,7 +7,7 @@ import {
   loginUser,
   registerUser,
   logoutUser,
-  generateOtp
+  generateOtp,
 } from "../api/authServices";
 
 const AuthContext = createContext(null);
@@ -20,20 +20,29 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // In AuthProvider.jsx, modify the checkAuth function:
     const checkAuth = async () => {
+      setLoading(true);
       try {
         const storedUser = JSON.parse(localStorage.getItem("user"));
-        if(storedUser) {
-          const response = await getUserById(storedUser._id);
-          if(response.status && response.user) {
-            setCurrentUser(response.user);
+
+        // Only attempt to validate the user if we have stored data
+        if (storedUser) {
+          try {
+            const response = await getUserById(storedUser._id);
+            if (response.status && response.user) {
+              setCurrentUser(response.user);
+            } else {
+              // Invalid user data but don't redirect yet
+              setCurrentUser(null);
+            }
+          } catch (error) {
+            console.error("Failed to validate user:", error);
+            setCurrentUser(null);
           }
-        }
-        if (!storedUser && window.location.pathname !== "/login") {
+        } else {
           setCurrentUser(null);
-          navigate("/login");
         }
-        
       } catch (error) {
         console.error("Authentication check failed:", error);
         setCurrentUser(null);
@@ -44,6 +53,28 @@ export const AuthProvider = ({ children }) => {
 
     checkAuth();
   }, []);
+
+  // In AuthProvider.jsx, add this separate effect for navigation
+  useEffect(() => {
+    // Only run navigation logic when loading is complete
+    if (!loading) {
+      const currentPath = window.location.pathname;
+      const isAuthRoute = [
+        "/login",
+        "/register",
+        "/forgot-password",
+        "/otp-verification",
+      ].includes(currentPath);
+
+      if (!currentUser && !isAuthRoute) {
+        navigate("/login");
+      } else if (currentUser && isAuthRoute) {
+        // Redirect to dashboard if user is already logged in but on auth pages
+        const role = currentUser.role || "user";
+        navigate(`/${role}/dashboard`);
+      }
+    }
+  }, [loading, currentUser, navigate]);
 
   const login = async (email, password, role) => {
     setLoading(true);
@@ -77,13 +108,19 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await generateOtp({email: userData.email, name: userData.name , OtpType:'verifyAccount'})
-      if(res.status){
-        navigate("/otp-verification", { state: { OtpType: 'verifyAccount', user:userData } });
+      const res = await generateOtp({
+        email: userData.email,
+        name: userData.name,
+        OtpType: "verifyAccount",
+      });
+      if (res.status) {
+        navigate("/otp-verification", {
+          state: { OtpType: "verifyAccount", user: userData },
+        });
       }
       // const response = await registerUser(userData);
       // if (response.data.status && response.data.newuser) {
-       
+
       //   toast({
       //     title: "Registration successful",
       //     description: `Welcome, ${response.data.newuser.name}!`,

@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2, PlusCircle, DollarSign, Tag, Clock } from "lucide-react";
+import { Edit, Trash2, PlusCircle, IndianRupee, Tag, Clock, IndianRupeeIcon } from "lucide-react";
 import { mockServices } from "@/data/mockData";
 import { Plus, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -465,19 +465,19 @@ const WorkerManageServices = () => {
                                   <span>{service?.category?.name}</span>
                                 </div>
                                 <div className="flex items-center text-sm">
-                                  <DollarSign className="h-4 w-4 mr-1 text-gray-500" />
-                                  <span>₹{currentUser?.pricing?.[service.name] || service.price}</span>
+                                  <IndianRupeeIcon className="h-4 w-4 mr-1 text-gray-500" />
+                                  <span>{currentUser?.pricing?.[service.name] ||0}</span>
                                 </div>
-                                <div className="flex items-center text-sm">
+                                {/* <div className="flex items-center text-sm">
                                   <Clock className="h-4 w-4 mr-1 text-gray-500" />
                                   <span>{service.responseTime || 'Within 24 hours'}</span>
-                                </div>
+                                </div> */}
                               </div>
                             </div>
                             <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
+                              {/* <Button variant="outline" size="sm">
                                 <Edit className="h-4 w-4" />
-                              </Button>
+                              </Button> */}
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -491,7 +491,7 @@ const WorkerManageServices = () => {
                           <Separator className="my-3" />
 
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
+                            {/* <div className="flex items-center space-x-2">
                               <Switch
                                 id={`active-${service._id}`}
                                 checked={currentUser?.services?.includes(service.name)}
@@ -503,7 +503,7 @@ const WorkerManageServices = () => {
                               >
                                 {currentUser?.services?.includes(service.name) ? "Active" : "Inactive"}
                               </Label>
-                            </div>
+                            </div> */}
                             <div className="text-sm text-gray-500">
                               {currentUser?.services?.includes(service.name)
                                 ? "Customers can book this service"

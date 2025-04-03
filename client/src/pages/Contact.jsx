@@ -81,7 +81,7 @@ const Contact = () => {
                     <Mail className="h-6 w-6 text-brand-600 mr-4 mt-1" />
                     <div>
                       <h3 className="font-medium">Email Address</h3>
-                      <p className="text-gray-600">support@homeserve.com</p>
+                      <p className="text-gray-600">support@quickfix.com</p>
                     </div>
                   </div>
                   <div className="flex items-start">

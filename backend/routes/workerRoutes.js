@@ -10,14 +10,16 @@ const {
   getWorkerServices,
   createService,
   updateService,
-  deleteService
+  deleteService,
+  getWorkerReviewsAndUpdateRating,
+  getFeaturedWorker
 } = require('../controllers/workerController');
 
 // All routes are protected and require worker role
 router.use(verifyUser);
 
 // Worker profile routes
-router.get('/profile', getWorkerProfile);
+router.get('/profile/:id', getWorkerProfile);
 
 // Worker availability routes
 router.put('/availability', updateWorkerAvailability);
@@ -34,5 +36,7 @@ router.get('/services', getWorkerServices);
 router.post('/services', createService);
 router.put('/services/:id', updateService);
 router.delete('/services/:id', deleteService);
+router.get("/review/:workerId", getWorkerReviewsAndUpdateRating);
+router.get("/featured-worker", getFeaturedWorker)
 
 module.exports = router; 

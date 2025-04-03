@@ -4,45 +4,17 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { mockWorkers } from "@/data/mockData";
-import { useAuth } from "@/contexts/AuthContext";
 import { Star, MapPin, Phone, Mail, Clock, Check } from "lucide-react";
 import { getUsers } from "../api/authServices";
 import { getService } from "../api/servicesApi";
-const mockReviewsCount = {
-  "worker1": 3,
-  "worker2": 5,
-  "worker3": 2,
-  "worker4": 8,
-  "worker5": 1
-};
-
+import { getReviewByWorkerId } from "../api/reviewApi";
 
 const WorkerProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState("");
-  const [selectedService, setSelectedService] = useState("");
-  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [services, setServices] = useState([]);
   const [workers, setWorkers] = useState([]);
-  const reviewCount = id && mockReviewsCount[id] ? mockReviewsCount[id] : 0;
+  const [reviews, setReviews] = useState([]);
 
   const fetchServices = async () => {
     try {
@@ -54,7 +26,15 @@ const WorkerProfile = () => {
     }
   };
 
+  const reviewByWorkerId = async () => {
+    const res = await getReviewByWorkerId(id);
+    if (res.status) {
+      setReviews(res.reviews);
+    }
+  };
+
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     const fetchUsers = async () => {
       try {
         const res = await getUsers(); // Use API function
@@ -68,6 +48,7 @@ const WorkerProfile = () => {
     };
     fetchServices();
     fetchUsers();
+    reviewByWorkerId();
   }, []);
   const worker = workers.find((w) => w._id === id);
 
@@ -89,17 +70,6 @@ const WorkerProfile = () => {
       </Layout>
     );
   }
-  const timeSlots = [
-    "09:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "01:00 PM",
-    "02:00 PM",
-    "03:00 PM",
-    "04:00 PM",
-    "05:00 PM",
-  ];
 
   const handleBooking = (servicename) => {
     const serviceId = services.find(
@@ -107,35 +77,6 @@ const WorkerProfile = () => {
     )?._id;
     navigate(`/book-service/${serviceId}`);
   };
-
-  // const handleBooking = (e) => {
-  //   e.preventDefault();
-
-  //   if (!selectedService) {
-  //     toast({
-  //       title: "Service required",
-  //       description: "Please select a service to continue.",
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
-
-  //   if (!selectedTime) {
-  //     toast({
-  //       title: "Time slot required",
-  //       description: "Please select a time slot to continue.",
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
-
-  //   toast({
-  //     title: "Booking request sent!",
-  //     description: `Your booking request with ${worker.name} has been sent for approval.`,
-  //   });
-
-  //   setBookingDialogOpen(false);
-  // };
 
   return (
     <Layout>
@@ -161,11 +102,11 @@ const WorkerProfile = () => {
                         <span className="font-medium">
                           {worker.rating.toFixed(1)}
                         </span>
-                        <Link 
-                          to={`/workers/${id}/reviews`} 
+                        <Link
+                          to={`/workers/${id}/reviews`}
                           className="ml-2 text-sm text-blue-600 hover:underline"
                         >
-                          ({reviewCount} reviews)
+                          ({reviews.length} reviews)
                         </Link>
                       </div>
                       <div className="flex items-center text-gray-600">
@@ -223,111 +164,7 @@ const WorkerProfile = () => {
                         <span>{worker.email}</span>
                       </div>
                     </div>
-                    <div>
-                      {/* <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
-                        <DialogTrigger asChild>
-                          
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px]">
-                          <DialogHeader>
-                            <DialogTitle>Book an Appointment</DialogTitle>
-                            <DialogDescription>
-                              Select a service, date and time to book with {worker.name}.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <form onSubmit={handleBooking}>
-                            <div className="grid gap-4 py-4">
-                              <div className="grid grid-cols-4 gap-4">
-                                <Label htmlFor="service" className="col-span-4">
-                                  Select Service
-                                </Label>
-                                <div className="col-span-4">
-                                  <div className="grid grid-cols-2 gap-2">
-                                    {worker.services.map((service) => (
-                                      <div
-                                        key={service}
-                                        className={`border rounded-md p-3 cursor-pointer transition-colors ${
-                                          selectedService === service
-                                            ? "border-brand-600 bg-brand-50"
-                                            : "border-gray-200 hover:border-brand-400"
-                                        }`}
-                                        onClick={() => setSelectedService(service)}
-                                      >
-                                        <div className="font-medium">{service}</div>
-                                        <div className="text-sm text-gray-500">
-                                          ₹{worker.pricing[service]}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-4 gap-4">
-                                <Label htmlFor="date" className="col-span-4">
-                                  Select Date
-                                </Label>
-                                <div className="col-span-4 flex justify-center">
-                                  <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={setSelectedDate}
-                                    disabled={(date) => {
-                                      // Disable past dates and dates more than 30 days in the future
-                                      const today = new Date();
-                                      today.setHours(0, 0, 0, 0);
-                                      const futureLimit = new Date();
-                                      futureLimit.setDate(futureLimit.getDate() + 30);
-                                      return date < today || date > futureLimit;
-                                    }}
-                                    className="rounded-md border"
-                                  />
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-4 gap-4">
-                                <Label htmlFor="time" className="col-span-4">
-                                  Select Time Slot
-                                </Label>
-                                <div className="col-span-4">
-                                  <div className="grid grid-cols-3 gap-2">
-                                    {timeSlots.map((time) => (
-                                      <div
-                                        key={time}
-                                        className={`border rounded-md p-2 text-center cursor-pointer transition-colors ${
-                                          selectedTime === time
-                                            ? "border-brand-600 bg-brand-50"
-                                            : "border-gray-200 hover:border-brand-400"
-                                        }`}
-                                        onClick={() => setSelectedTime(time)}
-                                      >
-                                        {time}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-4 gap-4">
-                                <Label htmlFor="notes" className="col-span-4">
-                                  Additional Notes (Optional)
-                                </Label>
-                                <Textarea
-                                  id="notes"
-                                  placeholder="Provide any additional details about your service needs..."
-                                  className="col-span-4"
-                                />
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button type="submit">
-                                Confirm Booking
-                              </Button>
-                            </DialogFooter>
-                          </form>
-                        </DialogContent>
-                      </Dialog> */}
-                    </div>
+                    <div></div>
                   </div>
                 </div>
               </div>
@@ -403,77 +240,53 @@ const WorkerProfile = () => {
             <TabsContent value="reviews" className="mt-6">
               <Card>
                 <CardContent className="p-6">
-                <div className="flex justify-between items-center mb-6">
+                  <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-semibold">Customer Reviews</h3>
                     <Button asChild variant="outline">
-                      <Link to={`/workers/${id}/reviews`}>
-                        See All Reviews
-                      </Link>
+                      <Link to={`/workers/${id}/reviews`}>See All Reviews</Link>
                     </Button>
                   </div>
-                  
+
                   {/* Preview of reviews */}
-                  {reviewCount > 0 ? (
-                    <div className="space-y-6">
-                      <div className="border-b pb-4">
-                        <div className="flex items-start mb-2">
-                          <img
-                            src="https://i.pravatar.cc/150?img=32"
-                            alt="Customer"
-                            className="w-10 h-10 rounded-full mr-3"
-                          />
-                          <div>
-                            <h4 className="font-medium">Rahul Mehta</h4>
-                            <div className="flex items-center">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < 5
-                                      ? "fill-yellow-400 stroke-yellow-400"
-                                      : "stroke-gray-300"
-                                  }`}
-                                />
-                              ))}
-                              <span className="ml-2 text-sm text-gray-500">1 month ago</span>
+                  {reviews.length > 0 ? (
+                    reviews.map((review) => (
+                      <div className="space-y-6">
+                        <div key={review._id} className="border-b pb-4">
+                          <div className="flex items-start mb-2">
+                            <img
+                              src={review?.customer?.photoUrl}
+                              alt={review?.customer?.name}
+                              className="w-10 h-10 rounded-full mr-3"
+                            />
+                            <div>
+                              <h4 className="font-medium">
+                                {review?.customer?.name}
+                              </h4>
+                              <div className="flex items-center">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < review.rating
+                                        ? "fill-yellow-400 stroke-yellow-400"
+                                        : "stroke-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                                <span className="ml-2 text-sm text-gray-500">
+                                  {review.createdAt instanceof Date
+                                    ? review.createdAt.toLocaleDateString()
+                                    : new Date(
+                                        review.createdAt
+                                      ).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
                           </div>
+                          <p className="text-gray-700">{review?.comment}</p>
                         </div>
-                        <p className="text-gray-700">
-                          Excellent service! Very professional and completed the job quickly.
-                          Would definitely hire again for future needs.
-                        </p>
                       </div>
-                      
-                      <div className="border-b pb-4">
-                        <div className="flex items-start mb-2">
-                          <img
-                            src="https://i.pravatar.cc/150?img=45"
-                            alt="Customer"
-                            className="w-10 h-10 rounded-full mr-3"
-                          />
-                          <div>
-                            <h4 className="font-medium">Priya Singh</h4>
-                            <div className="flex items-center">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < 4
-                                      ? "fill-yellow-400 stroke-yellow-400"
-                                      : "stroke-gray-300"
-                                  }`}
-                                />
-                              ))}
-                              <span className="ml-2 text-sm text-gray-500">2 months ago</span>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-gray-700">
-                          Good work overall. Arrived on time and fixed the issue, though the price was a bit higher than expected.
-                        </p>
-                      </div>
-                    </div>
+                    ))
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-gray-600">No reviews yet.</p>

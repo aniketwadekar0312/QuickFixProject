@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import BookingForm from "@/components/booking/BookingForm";
@@ -30,9 +30,17 @@ const BookService = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentUser, isAuthenticated } = useAuth();
-
+  const [loading, setLoading] = useState(false);
   const [selectedService, setSelectedService] = useState(id || "");
   const [selectedWorker, setSelectedWorker] = useState("");
+
+  const intialstate = {
+
+  }
+
+  const [formData, setFormData] = useState({
+
+  })
   const [date, setDate] = useState(undefined);
   const [timeSlot, setTimeSlot] = useState("");
   const [address, setAddress] = useState(
@@ -69,11 +77,14 @@ const BookService = () => {
 
   const fetchServices = async () => {
     try {
+      setLoading(true)
       const res = await getService();
       // console.log(res.services);
       setServices(res.services);
     } catch (error) {
       console.log("error fetching Services", error);
+    }finally{
+      setLoading(false)
     }
   };
 
@@ -108,8 +119,7 @@ const workerName = selectedWorker
   const servicePrice = selectedWorker
   ? workers.find((w) => w._id === selectedWorker)?.pricing[serviceDetails?.name]
   : undefined;
-  console.log(serviceDetails)
-console.log(servicePrice)
+
   useEffect(() => {
     if (serviceDetails) {
       setSelectedService(serviceDetails._id);
@@ -126,9 +136,11 @@ console.log(servicePrice)
 
   const initiatePayment = async () => {
     try {
+      const totalAmount = servicePrice ? servicePrice + 49 : 0;
       const res = await intiatePayment({
         workerName: workerName,
         serviceName: serviceDetails?.name,
+        amount: totalAmount * 100 // in paisa
       });
       if (res.status) {
         setClientSecret(res.clientSecret);
@@ -202,7 +214,7 @@ console.log(servicePrice)
     }
     setIsSubmitting(true);
     try {
-      const totalAmount = serviceDetails ? serviceDetails.price + 49 : 10;
+      const totalAmount = servicePrice ? servicePrice + 49 : 0;
       // Prepare booking data
       const bookingData = {
         serviceId: selectedService,
@@ -218,11 +230,11 @@ console.log(servicePrice)
       };
 
       if (paymentMethod === "online") {
-       
-        const initiatedPaymentRes = await initiatePayment();
         localStorage.setItem("pendingBooking",JSON.stringify(bookingData));
+        const initiatedPaymentRes = await initiatePayment();
+        
        
-        const res = await verifyPayment({session_id: initiatedPaymentRes.session_id});
+        // const res = await verifyPayment({session_id: initiatedPaymentRes.session_id});
         
         
         // if (res.paymentStatus === "paid") {
@@ -266,8 +278,8 @@ console.log(servicePrice)
 
   return (
     <Layout>
-      <div className="bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
+      <div className="bg-gray-50 py-4 px-2">
+        <div className="container mx-auto">
           <Button
             variant="ghost"
             className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -281,7 +293,7 @@ console.log(servicePrice)
             {currentStep === 1 ? "Book a Service" : "Payment"}
           </h1>
 
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             {/* Progress Steps */}
             <div className="flex items-center justify-center mb-10">
               <div className="flex items-center space-x-2">
@@ -385,6 +397,7 @@ console.log(servicePrice)
                   paymentMethod={paymentMethod}
                   workerName={workerName}
                   services={services}
+                  servicePrice={servicePrice}
                 />
               </div>
             </div>

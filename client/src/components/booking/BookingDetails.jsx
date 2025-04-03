@@ -206,9 +206,7 @@ const BookingDetails = () => {
         </div>
       </Layout>
     );
-  }
-  console.log(booking);
-  
+  }  
   
   return (
     <Layout>
@@ -402,7 +400,7 @@ const BookingDetails = () => {
                     <div className="space-y-4">
                       <div className="aspect-video rounded-md bg-gray-100 overflow-hidden">
                         <img 
-                          src={service.imageUrl || "/placeholder.svg"} 
+                          src={service.image || "/placeholder.svg"} 
                           alt={service.name} 
                           className="w-full h-full object-cover"
                         />

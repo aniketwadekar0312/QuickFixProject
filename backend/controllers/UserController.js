@@ -138,7 +138,7 @@ const Logout = async (req, res) => {
 const getUsers = async (req, res) => {
   try {
     // Fetch only workers
-    const users = await User.find();
+    const users = await User.find({verified: true});
 
     return res.status(200).json(users);
   } catch (error) {

@@ -14,7 +14,8 @@ const BookingSummary = ({
   currentStep = 1,
   selectedPaymentId = "",
   paymentMethods = [],
-  services
+  services,
+  servicePrice
 }) => {
   const serviceDetails = selectedService 
     ? services.find(s => s._id === selectedService) 
@@ -98,7 +99,7 @@ const BookingSummary = ({
               <div className="flex justify-between mb-2">
                 <p className="text-gray-500">Service Fee</p>
                 <p className="font-medium">
-                  {serviceDetails ? `₹${serviceDetails.price}` : "-"}
+                  {serviceDetails ? `₹${servicePrice}` : "-"}
                 </p>
               </div>
               <div className="flex justify-between mb-2">
@@ -109,7 +110,7 @@ const BookingSummary = ({
                 <p>Total</p>
                 <p>
                   {serviceDetails
-                    ? `₹${(serviceDetails.price || 0) + 49}`
+                    ? `₹${(servicePrice || 0) + 49}`
                     : "-"}
                 </p>
               </div>

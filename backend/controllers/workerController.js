@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
 const Service = require('../models/Service');
+const Review = require("../models/Review")
 
 // @desc    Get worker's bookings
 // @route   GET /api/v1/worker/bookings
@@ -38,7 +39,7 @@ const updateWorkerAvailability = asyncHandler(async (req, res) => {
 
     const worker = await User.findByIdAndUpdate(
       req.user._id,
-      { isAvailable },
+      { available : isAvailable},
       { new: true, runValidators: true }
     );
 
@@ -116,8 +117,11 @@ const updateBookingStatus = asyncHandler(async (req, res) => {
 // @access  Private
 const getWorkerProfile = asyncHandler(async (req, res) => {
   try {
-    console.log('Getting profile for worker:', req.user._id);
-    const worker = await User.findById(req.user._id)
+    const workerId = req.params.id
+    if(!workerId){
+      return res.status(400).json({status: false, message: "workerId is required!"})
+    }
+    const worker = await User.findById(workerId)
       .select('-password');
 
     if (!worker) {
@@ -126,22 +130,19 @@ const getWorkerProfile = asyncHandler(async (req, res) => {
     }
 
     // Calculate average rating
-    const bookings = await Booking.find({ worker: worker._id, status: 'completed' });
+    //const bookings = await Booking.find({ worker: worker._id, status: 'completed' });
     
-    const totalRating = bookings.reduce((acc, booking) => acc + (booking.review?.rating || 0), 0);
-    const averageRating = bookings.length > 0 ? totalRating / bookings.length : 0;
+    // const totalRating = bookings.reduce((acc, booking) => acc + (booking.review?.rating || 0), 0);
+    // const averageRating = bookings.length > 0 ? totalRating / bookings.length : 0;
 
-    console.log('Found worker profile with rating:', averageRating);
-    res.json({
+    //console.log('Found worker profile with rating:', averageRating);
+    return res.status(200).json({
       success: true,
-      data: {
-        ...worker.toObject(),
-        rating: averageRating
-      }
+      data: worker
     });
   } catch (error) {
     console.error('Error in getWorkerProfile:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Error fetching worker profile'
     });
@@ -153,7 +154,7 @@ const getWorkerProfile = asyncHandler(async (req, res) => {
 // @access  Private
 const getWorkerEarnings = asyncHandler(async (req, res) => {
   try {
-    console.log('Getting earnings for worker:', req.user._id);
+    // console.log('Getting earnings for worker:', req.user._id);
     const completedBookings = await Booking.find({
       worker: req.user._id,
       status: 'completed'
@@ -181,7 +182,7 @@ const getWorkerEarnings = asyncHandler(async (req, res) => {
       });
     }
 
-    console.log('Found earnings:', { totalEarnings, monthlyEarningsCount: monthlyEarnings.length });
+   // console.log('Found earnings:', { totalEarnings, monthlyEarningsCount: monthlyEarnings.length });
     res.json({
       success: true,
       data: {
@@ -203,16 +204,15 @@ const getWorkerEarnings = asyncHandler(async (req, res) => {
 // @access  Private
 const getWorkerServices = asyncHandler(async (req, res) => {
   try {
-    console.log('Getting services for worker:', req.user._id);
-    const services = await Service.find({ worker: req.user._id });
+    const services = await Service.find({ worker: String(req.user._id) });
 
-    res.json({
+   return res.json({
       success: true,
       data: services
     });
   } catch (error) {
     console.error('Error in getWorkerServices:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || 'Error fetching services'
     });
@@ -319,6 +319,56 @@ const deleteService = asyncHandler(async (req, res) => {
   }
 });
 
+const getWorkerReviewsAndUpdateRating = async (req, res) => {
+  try {
+    const { workerId } = req.params;
+
+    if (!workerId) {
+      return res.status(400).json({ status: false, message: "Worker ID is required" });
+    }
+
+    // Fetch all reviews for the worker
+    const reviews = await Review.find({ worker: workerId });
+
+    if (!reviews.length) {
+      return res.status(404).json({ status: false, message: "No reviews found for this worker" });
+    }
+
+    // Calculate average rating
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = totalRating / reviews.length;
+
+    // Update worker document with new average rating
+    await User.findByIdAndUpdate(workerId, { rating: averageRating.toFixed(1) });
+
+    return res.status(200).json({
+      status: true,
+      message: "Worker rating updated successfully",
+      averageRating: averageRating.toFixed(1),
+    });
+  } catch (error) {
+    console.error("Error fetching worker reviews and updating rating:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+
+const getFeaturedWorker = async (req, res) => {
+  try {
+    // Fetch workers with rating greater than 4
+    const workers = await User.find({"role": "worker", "rating": {"$gte": 4}});
+
+    return res.status(200).json({
+      status: true,
+      message: "Workers fetched successfully",
+      workers,
+    });
+  } catch (error) {
+    console.error("Error fetching featured workers:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
 module.exports = {
   getWorkerBookings,
   updateWorkerAvailability,
@@ -328,5 +378,7 @@ module.exports = {
   getWorkerServices,
   createService,
   updateService,
-  deleteService
+  deleteService,
+  getWorkerReviewsAndUpdateRating,
+  getFeaturedWorker
 };

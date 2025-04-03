@@ -15,7 +15,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Info */}
           <div>
-            <h3 className="text-xl font-bold mb-4">HomeServe</h3>
+            <h3 className="text-xl font-bold mb-4">QuickFix</h3>
             <p className="text-gray-400 text-sm mb-4">
               Your trusted platform for home services. Connecting quality
               service providers with customers since 2023.
@@ -129,10 +129,10 @@ const Footer = () => {
               <li className="flex items-center">
                 <Mail size={16} className="mr-2 text-gray-400" />
                 <a
-                  href="mailto:info@homeserve.com"
+                  href="mailto:info@quickfix.com.com"
                   className="text-gray-400 hover:text-white transition"
                 >
-                  info@homeserve.com
+                  info@quickfix.com
                 </a>
               </li>
             </ul>
@@ -141,7 +141,7 @@ const Footer = () => {
 
         {/* Footer Bottom */}
         <div className="border-t border-gray-800 mt-8 pt-6 text-center text-gray-400 text-sm">
-          <p>© {new Date().getFullYear()} HomeServe. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} QuickFix. All rights reserved.</p>
         </div>
       </div>
     </footer>

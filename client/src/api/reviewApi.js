@@ -11,6 +11,16 @@ export const getCustomerReviews = async () => {
   }
 };
 
+export const getReviews = async () => {
+  try {
+    const response = await api.get('/v1/reviews');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching customer reviews:', error);
+    throw error;
+  }
+};
+
 // Get reviews for a specific booking
 export const getBookingReviews = async (bookingId) => {
   try {
@@ -59,6 +69,16 @@ export const deleteReview = async (reviewId) => {
 export const getWorkerReviews = async () => {
   try {
     const response = await api.get(`/v1/reviews/worker`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching worker reviews:', error);
+    throw error;
+  }
+}; 
+
+export const getReviewByWorkerId = async (id) => {
+  try {
+    const response = await api.get(`/v1/worker/${id}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching worker reviews:', error);

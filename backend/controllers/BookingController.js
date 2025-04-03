@@ -28,7 +28,7 @@ const stripe = require("stripe")(
 
 const createCheckoutSession = async(req, res) => {
   try {
-    const {workerName, serviceName} = req.body;
+    const {workerName, serviceName, amount} = req.body;
     
     const session = await stripe.checkout.sessions.create({
       ui_mode: "embedded",
@@ -39,7 +39,7 @@ const createCheckoutSession = async(req, res) => {
             product_data: {
               name: `${workerName} - ${serviceName}`,
             },
-            unit_amount: 1000, // Amount in paise (₹10 = 1000 paise)
+            unit_amount: amount, // Amount in paise (₹10 = 1000 paise) 20 = 2000
           },
           quantity: 1,
         },
@@ -85,7 +85,7 @@ const createBooking = async (req, res) => {
       timeSlot,
       address,
       paymentMethod,
-      
+      sessionId
     } = req.body;
     // console.log(req.body);
 
@@ -96,10 +96,8 @@ const createBooking = async (req, res) => {
     // }
 
     // Check if service exists
-    console.log(serviceId);
     
     const service = await Service.findOne({_id: serviceId});
-    console.log(service);
     if (!service) {
       return res.status(404).json({ status: false, message: "Service not found" });
     }
@@ -119,12 +117,11 @@ const createBooking = async (req, res) => {
       address,
       paymentMethod,
       payment: {
-        paymentIntentId: "",
+        sessionId,
         status: "completed",
       },
       totalAmount,
     });
-    console.log("Create booking",booking);
 
     await booking.save();
 

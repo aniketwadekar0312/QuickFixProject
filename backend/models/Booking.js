@@ -42,7 +42,7 @@ const BookingSchema = new Schema({
     required: true
   },
   payment: {
-    paymentIntentId: String,
+    sessionId: String,
     status: {
       type: String,
       enum: ['pending', 'completed', 'failed', 'refunded']
@@ -53,10 +53,6 @@ const BookingSchema = new Schema({
     type: Number,
     required: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+}, {timestamps: true});
 
 module.exports = mongoose.model('Booking', BookingSchema);

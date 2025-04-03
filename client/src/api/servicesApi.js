@@ -4,8 +4,12 @@ export const addService = async (data) => {
   return await axiosInstance.post("/v1/service", data);
 };
 
-export const getService = async () => {
-  return (await axiosInstance.get("/v1/service")).data;
+export const getService = async (query) => {
+  if(query){
+    return (await axiosInstance.get(`/v1/service?search=${query}`)).data;
+  }else{
+    return (await axiosInstance.get(`/v1/service`)).data;
+  }
 };
 
 export const getServiceById = async (id) => {

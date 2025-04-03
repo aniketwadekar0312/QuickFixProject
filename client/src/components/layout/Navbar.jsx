@@ -44,9 +44,6 @@ const Navbar = () => {
 
   if(currentUser?.role === "worker"){
       menuItems.push(
-        { label: "Home", path: "/" },
-        { label: "Services", path: "/services" },
-        { label: "Find Workers", path: "/workers" },
         { label: "About", path: "/about" },
         { label: "Contact", path: "/contact" }
       );

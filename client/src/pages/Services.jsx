@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/select";
 import { getCategory } from "../api/adminServices";
 import { getService } from "../api/servicesApi";
-import { Search } from "lucide-react";
+import { Search, Loader2, X } from "lucide-react";
 
 const Services = () => {
   const [searchParams] = useSearchParams();
   const initialCategory = searchParams.get("category") || "all-categories";
-
+  const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,6 +26,7 @@ const Services = () => {
 
   const fetchCategory = async () => {
     try {
+      setLoading(true);
       const res = await getCategory();
 
       const categoryNames = res.categories.map((category) => category.name);
@@ -33,16 +34,21 @@ const Services = () => {
       setCategories(categoryNames);
     } catch (error) {
       console.log("error fetching Category", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchServices = async () => {
     try {
+      setLoading(true);
       const res = await getService();
-  
+
       setServices(res.services);
     } catch (error) {
       console.log("error fetching Services", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,6 +56,10 @@ const Services = () => {
     fetchCategory();
     fetchServices();
   }, []);
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+  };
 
   const filteredServices = services?.filter((service) => {
     const matchesSearch =
@@ -72,13 +82,33 @@ const Services = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="col-span-1 md:col-span-2">
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
                   <Input
                     placeholder="Search services..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
+                  <div className="absolute right-3 top-3">
+                    {searchTerm ? (
+                      <button
+                        type="button"
+                        onClick={handleClearSearch}
+                        className="text-gray-400 hover:text-gray-600"
+                        aria-label="Clear search"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className="text-gray-500 hover:text-gray-700"
+                        aria-label="Search"
+                      >
+                        <Search className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>
@@ -112,44 +142,59 @@ const Services = () => {
 
           {/* Services Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredServices.map((service, index) => (
-              <Card
-                key={service?._id}
-                className="overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <div className="h-48">
-                  <img
-                    src={service?.image}
-                    alt={service?.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="mb-2">
-                    <span className="inline-block bg-brand-100 text-brand-800 text-xs px-2 py-1 rounded">
-                      {service?.category?.name}
-                    </span>
+            {loading && filteredServices.length === 0 ? (
+              <div className="flex justify-center items-center w-full ">
+                <Loader2 className="w-10 h-10 text-blue-600" /> Loading....
+              </div>
+            ) : (
+              filteredServices.map((service) => (
+                <Card
+                  key={service?._id}
+                  className="overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  <div className="h-48">
+                    <img
+                      src={service?.image}
+                      alt={service?.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{service?.name}</h3>
-                  <p className="text-gray-600">{service?.description}</p>
-                </CardContent>
-                <CardFooter className="p-6 pt-0">
-                  <Button className="w-full">
-                    <Link to={`/book-service/${service?._id}`}>Book Now</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                  <CardContent className="p-6">
+                    <div className="mb-2">
+                      <span className="inline-block bg-brand-100 text-brand-800 text-xs px-2 py-1 rounded">
+                        {service?.category?.name}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">
+                      {service?.name}
+                    </h3>
+                    <p className="text-gray-600">{service?.description}</p>
+                  </CardContent>
+                  <CardFooter className="p-6 pt-0">
+                    <Button
+                      className="w-full"
+                      disabled={service?.workerCount === 0}
+                    >
+                      <Link to={`/book-service/${service?._id}`}>
+                        {service?.workerCount === 0
+                          ? "No worker available"
+                          : "Book Now"}
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))
+            )}
           </div>
 
-          {filteredServices.length === 0 && (
+          {/* {filteredServices.length === 0 && (
             <div className="text-center py-12">
               <h3 className="text-xl font-semibold mb-2">No services found</h3>
               <p className="text-gray-600">
                 Try adjusting your search or filter criteria.
               </p>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </Layout>

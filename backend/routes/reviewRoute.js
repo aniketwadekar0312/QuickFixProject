@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { verifyUser } = require('../middleware/auth');
 
-const { createReview, getWorkerReviews, getReviewsByWorker, getCustomerReviews,updateReview,deleteReview } = require('../controllers/ReviewController');
+const { createReview, getWorkerReviews, getReviewsByWorker, getCustomerReviews,updateReview,deleteReview, getAllReviews } = require('../controllers/ReviewController');
 
 // Create a review (Customers only)
 router.post('/reviews', verifyUser, createReview);
-
+router.get('/reviews', verifyUser, getAllReviews);
 // Get all reviews for the logged-in worker
 router.get('/reviews/worker', verifyUser, getWorkerReviews);
 

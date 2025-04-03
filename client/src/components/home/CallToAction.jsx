@@ -7,7 +7,7 @@ const CallToAction = () => {
       <div className="container mx-auto px-4 text-center">
         <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Transform Your Home?</h2>
         <p className="text-xl max-w-2xl mx-auto mb-8 opacity-90">
-          Join thousands of satisfied customers who trust HomeServe for their home service needs.
+          Join thousands of satisfied customers who trust QuickFix for their home service needs.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button asChild size="lg" className="bg-accent-500 hover:bg-accent-600 text-white">
