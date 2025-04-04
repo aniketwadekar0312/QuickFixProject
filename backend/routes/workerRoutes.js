@@ -10,9 +10,10 @@ const {
   getWorkerServices,
   createService,
   updateService,
-  deleteService,
+  deleteServices,
   getWorkerReviewsAndUpdateRating,
-  getFeaturedWorker
+  getFeaturedWorker,
+  updateServices
 } = require('../controllers/workerController');
 
 // All routes are protected and require worker role
@@ -35,8 +36,9 @@ router.get('/earnings', getWorkerEarnings);
 router.get('/services', getWorkerServices);
 router.post('/services', createService);
 router.put('/services/:id', updateService);
-router.delete('/services/:id', deleteService);
+router.delete('/service/:service',  verifyUser,deleteServices);
 router.get("/review/:workerId", getWorkerReviewsAndUpdateRating);
-router.get("/featured-worker", getFeaturedWorker)
+router.get("/featured-worker", getFeaturedWorker);
+router.put("/service", verifyUser, updateServices);
 
 module.exports = router; 

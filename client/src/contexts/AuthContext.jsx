@@ -64,6 +64,7 @@ export const AuthProvider = ({ children }) => {
         "/register",
         "/forgot-password",
         "/otp-verification",
+        "/create-password",
       ].includes(currentPath);
 
       if (!currentUser && !isAuthRoute) {

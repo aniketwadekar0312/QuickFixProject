@@ -106,4 +106,22 @@ export const featuredWorker = async() => {
   } catch (error) {
     throw error;
   }
+};
+
+export const updateWorkerService = async(data) => {
+  try {
+    const response = await axios.put(`/v1/worker/service`, data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const deleteWorkerService = async(name) => {
+  try {
+    const response = await axios.delete(`/v1/worker/service/${name}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 }

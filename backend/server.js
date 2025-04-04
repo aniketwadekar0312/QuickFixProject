@@ -42,6 +42,7 @@ app.use('/api/v1', bookingRouter);
 app.use('/api/v1', adminDashboardRouter);
 app.use('/api/v1/', reviewRouter);
 app.use('/api/v1/payment-methods', paymentMethodRouter);
+app.use("/api/v1", require("./routes/contactEmailRoute.js"));
 
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);

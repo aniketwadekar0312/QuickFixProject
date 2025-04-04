@@ -16,6 +16,7 @@ const OTPVerification = () => {
   const { toast } = useToast();
   const otpType = location.state?.OtpType || "";
   const userData = location.state?.user || null;
+  const userForgot = location.state?.forgotUser || null;
 
   const headings = {
     verifyAccount: "Verify Your Account",
@@ -69,9 +70,13 @@ const OTPVerification = () => {
 
     setIsVerifying(true);
     try {
-      const email =
+      let email =
         otpType === "resetPassword" ? currentUser?.email : userData?.email;
 
+      if (userForgot !== null) {
+        email = userForgot;
+      }
+ console.log(email)
       if (!email) {
         toast({
           title: "Error",
@@ -104,7 +109,9 @@ const OTPVerification = () => {
             });
           }
         } else if (otpType === "resetPassword") {
-          navigate("/create-password");
+          navigate("/create-password", {
+            state: { forgotUser: email },
+          });
         } else {
           toast({
             title: "Unexpected OTP Type",

@@ -40,6 +40,7 @@ import ForgotPassword from "./components/auth/ForgotPassword";
 import {useAuth} from "./contexts/AuthContext"
 const queryClient = new QueryClient();
 import {Loader2} from "lucide-react"
+import WorkerServiceDetails from "./pages/worker/WorkerServiceDetails";
 
 // Create a separate component for the routes that will be wrapped by AuthProvider
 const AppRoutes = () => {
@@ -100,6 +101,7 @@ const AppRoutes = () => {
             element={<WorkerAccountSettings />}
           />
           <Route path="/worker/earnings" element={<WorkerEarnings />} />
+          <Route path="worker/service-details" element={<WorkerServiceDetails/>}/>
         </Route>
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />

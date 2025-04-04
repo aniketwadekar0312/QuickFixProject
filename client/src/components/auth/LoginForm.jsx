@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { generateOtp } from "../../api/authServices";
 
 const LoginForm = () => {
   const { login } = useAuth();
@@ -28,14 +29,16 @@ const LoginForm = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const defaultRole = searchParams.get("role") || "customer";
 
   const form = useForm({
     defaultValues: {
-      email: "gulsanvarma2589@gmail.com",
-      password: "Gulshan@3265",
-      role: "customer",
+      email: "",
+      password: "",
+      role: defaultRole,
     },
   });
 
@@ -43,6 +46,7 @@ const LoginForm = () => {
     setLoading(true);
     try {
       await login(values.email, values.password, values.role);
+      setMessage("Signing in...");
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -54,6 +58,56 @@ const LoginForm = () => {
       setLoading(false);
     }
   }
+
+  const handleForgotPassword = async () => {
+    const email = form.getValues("email");
+    
+    if (!email) {
+      toast({
+        title: "Error",
+        description: "Please enter your email to reset the password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      const data = {
+        email,
+        name: email,
+        OtpType: "resetPassword",
+      };
+
+      const res = await generateOtp(data);
+      if (res.status) {
+        toast({
+          title: "Success",
+          description: "OTP sent successfully. Check your email.",
+        });
+
+        setMessage("Proceed to reset password");
+        navigate("/otp-verification", {
+          state: { OtpType: data.OtpType, forgotUser: email },
+        });
+      } else {
+        toast({
+          title: "Failed",
+          description: res.message || "Failed to generate OTP. Try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate OTP. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error generating OTP:", error);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto">
@@ -102,10 +156,7 @@ const LoginForm = () => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Account Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select account type" />
@@ -125,21 +176,33 @@ const LoginForm = () => {
             )}
           />
 
+          <p className="text-end text-sm">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-brand-600 hover:underline"
+              disabled={otpLoading}
+            >
+              {otpLoading ? "Sending OTP..." : "Forgot Password?"}
+            </button>
+          </p>
+
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? message : "Sign In"}
           </Button>
         </form>
       </Form>
+
       <div className="mt-4 text-center text-sm">
         <p>
           Don't have an account?{" "}
-          <a
-            href="#"
+          <button
+            type="button"
             onClick={() => navigate("/register")}
             className="text-brand-600 hover:underline"
           >
             Register now
-          </a>
+          </button>
         </p>
       </div>
     </div>

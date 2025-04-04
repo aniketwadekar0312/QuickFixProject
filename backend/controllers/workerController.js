@@ -286,38 +286,41 @@ const updateService = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Delete a service
-// @route   DELETE /api/v1/worker/services/:id
-// @access  Private
-const deleteService = asyncHandler(async (req, res) => {
+const deleteServices = async (req, res) => { 
   try {
-    const service = await Service.findById(req.params.id);
-
+    const workerId = req.user._id;
+    const { service } = req.params;
     if (!service) {
-      res.status(404);
-      throw new Error('Service not found');
+      return res.status(400).json({ status: false, message: "Service name is required" });
     }
 
-    // Check if the service belongs to the worker
-    if (service.worker.toString() !== req.user._id.toString()) {
-      res.status(403);
-      throw new Error('Not authorized to delete this service');
+    // Fetch the worker's existing services
+    const worker = await User.findById(workerId);
+    if (!worker) {
+      return res.status(404).json({ status: false, message: "Worker not found" });
     }
 
-    await service.remove();
+    // Ensure pricing is initialized as a Map
+    if (!worker.pricing) worker.pricing = new Map();
 
-    res.json({
-      success: true,
-      data: {}
+    // Remove service and its pricing
+    worker.services = worker.services.filter(s => s !== service); // Remove from array
+    worker.pricing.delete(service); // Remove from Map
+
+    // Save updated worker document
+    await worker.save();
+
+    return res.status(200).json({
+      status: true,
+      message: `Service '${service}' deleted successfully`,// Convert Map to plain object for response
     });
+
   } catch (error) {
-    console.error('Error in deleteService:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Error deleting service'
-    });
+    console.error("Error in deleteServices:", error);
+    return res.status(500).json({ status: false, message: error.message });
   }
-});
+};
+
 
 const getWorkerReviewsAndUpdateRating = async (req, res) => {
   try {
@@ -369,6 +372,42 @@ const getFeaturedWorker = async (req, res) => {
   }
 };
 
+const updateServices = async (req, res) => { 
+  try {
+    const workerId = req.user._id;
+    const { services } = req.body; // Expecting array of { name, price }
+
+    // Fetch the worker's existing services
+    const worker = await User.findById(workerId);
+    if (!worker) {
+      return res.status(404).json({ status: false, message: "Worker not found" });
+    }
+
+    // Ensure pricing is initialized as a Map
+    if (!worker.pricing) worker.pricing = new Map();
+
+    // Add new services & update pricing
+    services.forEach(({ name, price }) => {
+      if (!worker.services.includes(name)) {
+        worker.services.push(name); // Add new service name if not already present
+      }
+      worker.pricing.set(name, price); // Use `.set()` to update the Map
+    });
+
+    // Save updated worker document
+    await worker.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Worker's services and pricing updated successfully",
+    });
+
+  } catch (error) {
+    console.error("Error in updateServices:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
 module.exports = {
   getWorkerBookings,
   updateWorkerAvailability,
@@ -378,7 +417,8 @@ module.exports = {
   getWorkerServices,
   createService,
   updateService,
-  deleteService,
+  deleteServices,
   getWorkerReviewsAndUpdateRating,
-  getFeaturedWorker
+  getFeaturedWorker,
+  updateServices
 };

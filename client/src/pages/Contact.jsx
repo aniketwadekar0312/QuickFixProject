@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
+import { sendEmail } from "../api/SendEmail";
 
 const Contact = () => {
   const { toast } = useToast();
@@ -22,29 +23,36 @@ const Contact = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const handleSubmit = async (e) => {
+    try {
+      e.preventDefault();
+      setIsSubmitting(true);
 
-    console.log("Form Data:", formData);
-
-    // Simulate API call
-    setTimeout(() => {
+      console.log("Form Data:", formData);
+      setIsSubmitting(true);
+      const res = await sendEmail(formData);
+      if (res.status) {
+        toast({
+          title: "Success",
+          description: res.message,
+        });
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          message: "",
+        });
+      }
+    } catch (error) {
+      console.log("error sending email", error);
       toast({
-        title: "Message Sent",
-        description:
-          "We've received your message and will get back to you soon.",
+        title: "Error",
+        description: res.message,
+        variant: "destructive",
       });
-
-      setFormData({
-        name: "",
-        email: "",
-        subject: "",
-        message: "",
-      });
-
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (

@@ -12,7 +12,7 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "../../hooks/use-toast";
@@ -43,7 +43,9 @@ const ForgotPassword = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { currentUser } = useAuth();
-
+  const location = useLocation();
+  const userForgot = location.state?.forgotUser || null;
+  const email = userForgot?.email || currentUser?.email || "";
   const createPasswordForm = useForm({
     resolver: zodResolver(passwordSchema), // ✅ Apply Zod validation
     defaultValues: {
@@ -55,7 +57,7 @@ const ForgotPassword = () => {
 
   const onSubmit = async (data) => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       const updatedUser = await updateUserProfile(currentUser._id, data);
 
       if (updatedUser.status) {
@@ -63,8 +65,12 @@ const ForgotPassword = () => {
           title: "Password updated",
           description: "Your password has been updated successfully.",
         });
-        createPasswordForm.reset()
-        navigate("/profile")
+        createPasswordForm.reset();
+        if (userForgot) {
+          navigate("/login");
+        } else {
+          navigate("/profile");
+        }
       }
     } catch (error) {
       toast({
@@ -73,8 +79,8 @@ const ForgotPassword = () => {
         variant: "destructive",
       });
       console.error("Password update failed", error);
-    }finally{
-      setIsLoading(false)
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -87,7 +93,7 @@ const ForgotPassword = () => {
             variant="ghost"
             disabled={isLoading}
             className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            onClick={() =>  navigate("/profile")}
+            onClick={() => navigate("/profile")}
           >
             <ArrowLeft size={16} />
             Back
@@ -111,7 +117,7 @@ const ForgotPassword = () => {
                       <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
-                        value={currentUser?.email || ""}
+                        value={email}
                         readOnly
                         className="bg-gray-100 cursor-not-allowed"
                       />

@@ -14,9 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2, PlusCircle, IndianRupee, Tag, Clock, IndianRupeeIcon } from "lucide-react";
+import { Edit, Trash2, PlusCircle, IndianRupee, Tag, Clock, IndianRupeeIcon, Plus, X  } from "lucide-react";
 import { mockServices } from "@/data/mockData";
-import { Plus, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 import {
