@@ -13,14 +13,15 @@ const FeaturedWorkers = () => {
   const getWorker = async () => {
     setLoading(true);
     const res = await featuredWorker();
+    console.log(res)
     if (res.status) {
       const workersWithRating = await Promise.all(
         res.workers.map(async (worker) => {
-          const ratingRes = await getWorkerReviewAndUpdate(worker._id);
-          return { ...worker, rating: ratingRes.averageRating || 0 };
+          // const ratingRes = await getWorkerReviewAndUpdate(worker._id);
+          // return { ...worker, rating: ratingRes.averageRating || 0 };
         })
       );
-      setFeaturedWorkers(workersWithRating);
+      setFeaturedWorkers(res.workers);
     }
     setLoading(false);
   };
@@ -76,7 +77,7 @@ const FeaturedWorkers = () => {
                   </CardContent>
                   <CardFooter className="p-4 pt-0 flex justify-between items-center">
                     <span className="text-sm text-gray-500">
-                      {worker.location}
+                      {worker?.location}
                     </span>
                     <Button asChild variant="outline" size="sm">
                       <Link to={`/workers/${worker._id}`}>View Profile</Link>
