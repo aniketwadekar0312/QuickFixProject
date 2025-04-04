@@ -18,8 +18,23 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { addCategory, getCategory, updateCategory, deleteCategory } from "../../api/adminServices";
+import {
+  addCategory,
+  getCategory,
+  updateCategory,
+  deleteCategory,
+} from "../../api/adminServices";
 import { Pencil, Image, CircleAlert, Trash2 } from "lucide-react";
 
 const Categories = () => {
@@ -27,9 +42,9 @@ const Categories = () => {
   const [formData, setFormData] = useState({ imageUrl: "", name: "" });
   const [categories, setCategories] = useState([]);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
   const { toast } = useToast();
 
-  // Handle input change
   const onChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({
@@ -38,7 +53,6 @@ const Categories = () => {
     }));
   };
 
-  // Fetch categories
   const fetchCategories = async () => {
     try {
       const res = await getCategory();
@@ -54,44 +68,53 @@ const Categories = () => {
     fetchCategories();
   }, []);
 
-  // Handle edit category
   const handleEditCategory = (category) => {
     setEditingCategoryId(category._id);
     setFormData({ imageUrl: category.imageUrl, name: category.name });
   };
 
-  // Handle delete category
   const handleDeleteCategory = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this category?")) return;
     try {
       const res = await deleteCategory(id);
       if (res.status) {
-        toast({ title: "Category Deleted", description: "The category was removed successfully!" });
+        toast({
+          title: "Category Deleted",
+          description: "The category was removed successfully!",
+        });
         fetchCategories();
       }
     } catch (error) {
       console.error("Error deleting category:", error);
-      toast({ title: "Error", description: "Failed to delete the category", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to delete the category",
+        variant: "destructive",
+      });
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
-  // Handle form submission (Add/Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
       let res;
       if (editingCategoryId) {
-        // Update category
         res = await updateCategory(formData, editingCategoryId);
         if (res.status) {
-          toast({ title: "Category Updated", description: "Your category has been updated!" });
+          toast({
+            title: "Category Updated",
+            description: "Your category has been updated!",
+          });
         }
       } else {
-        // Add new category
         res = await addCategory(formData);
         if (res.status) {
-          toast({ title: "Category Added", description: "Your category has been added!" });
+          toast({
+            title: "Category Added",
+            description: "Your category has been added!",
+          });
         }
       }
       setFormData({ imageUrl: "", name: "" });
@@ -99,7 +122,11 @@ const Categories = () => {
       fetchCategories();
     } catch (error) {
       console.error("Error saving category:", error);
-      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Something went wrong",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -110,12 +137,13 @@ const Categories = () => {
       <div className="bg-gray-50 py-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            
             {/* Categories Table */}
             <Card className="lg:col-span-3">
               <CardHeader>
                 <CardTitle>Service Categories</CardTitle>
-                <CardDescription>Overview of service categories across the platform</CardDescription>
+                <CardDescription>
+                  Overview of service categories across the platform
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -143,11 +171,19 @@ const Categories = () => {
                           </TableCell>
                           <TableCell>{category.name}</TableCell>
                           <TableCell className="text-center space-x-2">
-                            <Button variant="link" size="sm" onClick={() => handleEditCategory(category)}>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              onClick={() => handleEditCategory(category)}
+                            >
                               <Pencil className="h-4 w-4 mr-1" />
                               Edit
                             </Button>
-                            <Button variant="link" size="sm" onClick={() => handleDeleteCategory(category._id)}>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              onClick={() => setCategoryToDelete(category)}
+                            >
                               <Trash2 className="h-4 w-4 mr-1 text-red-500" />
                               Delete
                             </Button>
@@ -158,8 +194,12 @@ const Categories = () => {
                       <TableRow>
                         <TableCell colSpan={3} className="text-center py-8">
                           <CircleAlert className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                          <h3 className="text-lg font-semibold mb-2">No Categories Found</h3>
-                          <p className="text-gray-600">There are no categories available at this moment.</p>
+                          <h3 className="text-lg font-semibold mb-2">
+                            No Categories Found
+                          </h3>
+                          <p className="text-gray-600">
+                            There are no categories available at this moment.
+                          </p>
                         </TableCell>
                       </TableRow>
                     )}
@@ -169,13 +209,14 @@ const Categories = () => {
             </Card>
 
             {/* Add/Edit Category Form */}
-            <Card className="lg:col-span-2 max-h-[350px]">
+            <Card className={`lg:col-span-2 ${editingCategoryId?"max-h-[420px]":"max-h-[350px]"}`}>
               <CardHeader>
-                <CardTitle>{editingCategoryId ? "Edit Category" : "Add Category"}</CardTitle>
+                <CardTitle>
+                  {editingCategoryId ? "Edit Category" : "Add Category"}
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-3">
-                  
                   {/* Image URL Input */}
                   <div className="space-y-2">
                     <Label htmlFor="imageUrl">Image URL</Label>
@@ -188,7 +229,11 @@ const Categories = () => {
                       required
                     />
                     {formData.imageUrl && (
-                      <img src={formData.imageUrl} alt="Preview" className="h-16 w-16 rounded-md mt-2 object-cover" />
+                      <img
+                        src={formData.imageUrl}
+                        alt="Preview"
+                        className="h-16 w-16 rounded-md mt-2 object-cover"
+                      />
                     )}
                   </div>
 
@@ -204,17 +249,43 @@ const Categories = () => {
                       required
                     />
                   </div>
-
                   {/* Submit Button */}
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Processing..." : editingCategoryId ? "Update" : "Add"}
+                    {isSubmitting
+                      ? "Processing..."
+                      : editingCategoryId
+                      ? "Update"
+                      : "Add"}
                   </Button>
                 </form>
               </CardContent>
             </Card>
-
           </div>
         </div>
+
+        {/* Delete Category Confirmation Dialog */}
+        {categoryToDelete && (
+          <AlertDialog open={!!categoryToDelete} onOpenChange={() => setCategoryToDelete(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete the category "
+                  {categoryToDelete.name}"? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => handleDeleteCategory(categoryToDelete._id)}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     </Layout>
   );

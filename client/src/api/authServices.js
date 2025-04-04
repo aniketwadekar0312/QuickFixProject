@@ -20,8 +20,13 @@ export const getUserById = async (id) => {
 };
 
 export const updateUserProfile = async (id, data) => {
-    const response = await axiosInstance.put(`/v1/user/${id}`, data);
-    return response.data;
+  const response = await axiosInstance.put(`/v1/user/${id}`, data); 
+  return response.data;
+};
+
+export const updateUserProfileByEmail = async (data) => {
+  const response = await axiosInstance.post(`/v1/user/email`, data); 
+  return response.data;
 };
 
 // Fetch User Profile

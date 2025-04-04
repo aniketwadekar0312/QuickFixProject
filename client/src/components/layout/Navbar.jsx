@@ -51,7 +51,7 @@ const Navbar = () => {
       menuItems.push(
         { label: "Home", path: "/" },
         { label: "Categories", path: "/admin/category" },
-        { label: "Services", path: "/services" },
+        { label: "Services", path: "/admin/services" },
         { label: "Find Workers", path: "/workers" },
         { label: "About", path: "/about" },
         { label: "Contact", path: "/contact" }

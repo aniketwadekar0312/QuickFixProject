@@ -206,7 +206,7 @@ const handleBookingClick = (bookingId) => {
                       bookings?.filter((b) => b?.status === "pending")
                         .length > 0 ? (
                         <div className="space-y-4">
-                          {bookings.map((booking, index) => (
+                          {bookings.filter((b) => b?.status === "pending").map((booking, index) => (
                             <div
                               key={booking._id || index}
                               className="border rounded-lg p-4 hover:border-brand-200 transition-colors cursor-pointer hover:bg-gray-50"

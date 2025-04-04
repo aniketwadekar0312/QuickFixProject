@@ -16,7 +16,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "../../hooks/use-toast";
-import { updateUserProfile } from "../../api/authServices";
+import { updateUserProfile, updateUserProfileByEmail } from "../../api/authServices";
 import * as z from "zod";
 import { useState } from "react";
 
@@ -58,7 +58,14 @@ const ForgotPassword = () => {
   const onSubmit = async (data) => {
     try {
       setIsLoading(true);
-      const updatedUser = await updateUserProfile(currentUser._id, data);
+      let updatedUser=null;
+      console.log(userForgot);
+      if(userForgot){
+       updatedUser = await updateUserProfileByEmail({...data,email:userForgot});
+      }
+      else{   
+        updatedUser = await updateUserProfile(currentUser._id, data);
+      }
 
       if (updatedUser.status) {
         toast({

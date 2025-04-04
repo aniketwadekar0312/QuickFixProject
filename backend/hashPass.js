@@ -6,7 +6,7 @@ const hash = async () =>
 {
     // "customer", "worker", "admin"]
        const salt = await bcrypt.genSalt(10);
-       const hashPassword = await bcrypt.hash("Gulshan@123", salt);
+       const hashPassword = await bcrypt.hash("12345678", salt);
        console.log(hashPassword)
 };
 

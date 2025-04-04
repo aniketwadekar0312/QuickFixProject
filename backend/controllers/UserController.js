@@ -164,6 +164,7 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
+
     const {
       currentPassword,
       newPassword,
@@ -173,8 +174,9 @@ const updateUser = async (req, res) => {
       photoUrl,
     } = req.body;
 
-    // Find user by ID
     const user = await User.findById(userId);
+
+    // user = await User.findById(userId || email);
     if (!user) {
       return res.status(404).json({ status: false, message: "User not found" });
     }
@@ -205,7 +207,7 @@ const updateUser = async (req, res) => {
 
     // Update user profile
     const updatedUser = await User.findByIdAndUpdate(
-      userId,
+      userId ,
       { $set: updates },
       { new: true, runValidators: true }
     ).select("-password");
@@ -214,6 +216,69 @@ const updateUser = async (req, res) => {
       status: true,
       message: "User profile updated successfully",
       user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+const updateUserByEmail = async (req, res) => {
+  try {
+    // const userId = req.params.id;
+
+    const {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+      name,
+      phone,
+      photoUrl,
+      email,
+    } = req.body;
+
+    // Find user by ID
+    const user=await User.findOne({email:email});
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+
+    // Prepare update fields
+    let updates = { name, phone, photoUrl };
+
+    // Handle password update if currentPassword is provided
+    if (currentPassword) {
+      // const isMatch = currentPassword === user.password;
+      const isPasswordMatched = await bcrypt.compare(currentPassword, user.password);
+      if (!isPasswordMatched) {
+        return res
+          .status(400)
+          .json({ status: false, message: "Current password is incorrect" });
+      }
+
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({
+          status: false,
+          message: "New password and confirm password do not match",
+        });
+      }
+      // Hash new password before updating
+      const salt = await bcrypt.genSalt(10);
+
+          user.password=await bcrypt.hash(newPassword, salt);
+    }
+
+    // Update user profile
+    // const updatedUser = await User.findOneAndUpdate(
+    //   {email:email} ,
+    //   { $set: updates },
+    //   { new: true, runValidators: true }
+    // ).select("-password");
+    await user.save()
+    return res.status(200).json({
+      status: true,
+      message: "User profile updated successfully",
+      user,
     });
   } catch (error) {
     console.error("Error updating user:", error);
@@ -314,4 +379,5 @@ module.exports = {
   getUserById,
   generateOTPAndSendEmail,
   verifyOTP,
+  updateUserByEmail
 };

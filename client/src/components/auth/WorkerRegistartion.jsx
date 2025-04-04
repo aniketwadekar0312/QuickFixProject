@@ -178,7 +178,7 @@ const WorkerRegistrationForm = () => {
       console.log(userData);
       
       await register(userData);
-      navigate("/login");
+      // navigate("/login");
     } catch (error) {
       console.error("Registration error:", error);
     } finally {
