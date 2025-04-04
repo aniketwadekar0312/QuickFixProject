@@ -440,4 +440,4 @@ const AddServicesAdmin = () => {
   );
 };
 
-export default AddSericesAdmin;
+export default AddServicesAdmin;

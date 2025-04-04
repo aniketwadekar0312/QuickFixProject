@@ -16,7 +16,7 @@ const addService = async (req, res) => {
 
     const service = await newService.save();
     return res
-      .status(500)
+      .status(200)
       .json({ status: true, message: "Service added successfully", service });
   } catch (error) {
     console.log("Getting error in addService", error);
@@ -131,10 +131,10 @@ const deleteService = async (req, res) => {
         .json({ status: false, message: "Service not found" });
     }
 
-    await service.remove();
+    await Service.deleteOne({_id: req.params.id});
     return res
       .status(200)
-      .json({ status: false, message: "Service deleted successfully" });
+      .json({ status: true, message: "Service deleted successfully" });
   } catch (error) {
     console.log("Getting error in deleteService", error);
     return res.status(500).json({ status: false, message: error.message });

@@ -1,7 +1,7 @@
 import axiosInstance from "./api";
 
 export const addService = async (data) => {
-  return await axiosInstance.post("/v1/service", data);
+  return (await axiosInstance.post("/v1/service", data)).data;
 };
 
 export const getService = async (query) => {
